@@ -10,5 +10,24 @@
             "name": "Attach",
             "program": "${workspaceFolder}/src-tauri/target/debug/app.exe"
         },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'justrunmydebugger'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=justrunmydebugger",
+                    "--package=justrunmydebugger",
+                    "--manifest-path=./src-tauri/Cargo.toml"
+                ],
+                "filter": {
+                    "name": "justrunmydebugger",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}/src-tauri"
+        },
     ]
 }
