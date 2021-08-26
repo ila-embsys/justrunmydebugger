@@ -3,6 +3,8 @@
   windows_subsystem = "windows"
 )]
 
+mod openocd;
+
 fn main() {
   println!("Message from Rust");
 
@@ -14,6 +16,23 @@ fn main() {
 }
 
 #[tauri::command]
-fn my_custom_command() {
-  println!("I was invoked from JS!");
+fn my_custom_command() -> Vec<openocd::Config> {
+  let openocd_path = openocd::root_path();
+
+  if let Some(openocd_path) = openocd_path {
+    let board_path = openocd::board_path(openocd_path);
+    let boards = openocd::get_configs(&board_path);
+    println!("{:?}", boards);
+
+    match boards {
+      None => Vec::new(),
+      Some(boards) => {
+        println!("{:?}", boards);
+        boards
+      }
+    }
+  } else {
+    println!("OpenOCD not found!");
+    Vec::new()
+  }
 }
