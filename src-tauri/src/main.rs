@@ -1,38 +1,34 @@
 #![cfg_attr(
-  all(not(debug_assertions), target_os = "windows"),
-  windows_subsystem = "windows"
+    all(not(debug_assertions), target_os = "windows"),
+    windows_subsystem = "windows"
 )]
 
 mod openocd;
 
 fn main() {
-  println!("Message from Rust");
+    println!("Message from Rust");
 
-  tauri::Builder::default()
-    // This is where you pass in your commands
-    .invoke_handler(tauri::generate_handler![my_custom_command])
-    .run(tauri::generate_context!())
-    .expect("error while running tauri application");
+    tauri::Builder::default()
+        // This is where you pass in your commands
+        .invoke_handler(tauri::generate_handler![my_custom_command])
+        .run(tauri::generate_context!())
+        .expect("error while running tauri application");
 }
 
 #[tauri::command]
 fn my_custom_command() -> Vec<openocd::Config> {
-  let openocd_path = openocd::root_path();
+    let empty = Vec::<openocd::Config>::new();
 
-  if let Some(openocd_path) = openocd_path {
-    let board_path = openocd::board_path(openocd_path);
-    let boards = openocd::get_configs(&board_path);
-    println!("{:?}", boards);
+    if let Some(openocd_path) = openocd::root_path() {
+        let board_path = openocd::board_path(openocd_path);
+        let boards = openocd::get_configs(&board_path);
 
-    match boards {
-      None => Vec::new(),
-      Some(boards) => {
-        println!("{:?}", boards);
-        boards
-      }
+        match boards {
+            Some(boards) => boards,
+            None => empty,
+        }
+    } else {
+        println!("OpenOCD not found!");
+        empty
     }
-  } else {
-    println!("OpenOCD not found!");
-    Vec::new()
-  }
 }

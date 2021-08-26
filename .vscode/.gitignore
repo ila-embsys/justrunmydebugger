@@ -1,0 +1,5 @@
+*
+!.gitignore
+!launch.json
+!settings.template.json
+!extensions.json

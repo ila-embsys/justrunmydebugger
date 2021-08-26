@@ -1,8 +1,8 @@
+use serde::Serialize;
 use std::fs::{self, DirEntry};
 use std::option::Option;
 use std::path::{Path, PathBuf};
 use which::which;
-use serde::{Serialize};
 
 #[derive(Debug, Serialize)]
 pub struct Config {
@@ -41,7 +41,8 @@ pub fn get_configs(configs_dir: &Path) -> Option<Vec<Config>> {
                     let config = parse_config_name(&file_or_dir);
 
                     if let Some(config) = config {
-                        let board_name = config.name.strip_suffix(&config.ext)?;
+                        let ext_with_dot = format!("{}{}", ".", config.ext);
+                        let board_name = config.name.strip_suffix(&ext_with_dot)?;
 
                         board_names.push(Config {
                             name: String::from(board_name),
