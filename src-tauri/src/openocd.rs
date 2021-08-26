@@ -1,8 +1,8 @@
+use serde::Serialize;
 use std::fs::{self, DirEntry};
 use std::option::Option;
 use std::path::{Path, PathBuf};
 use which::which;
-use serde::{Serialize};
 
 #[derive(Debug, Serialize)]
 pub struct Config {
