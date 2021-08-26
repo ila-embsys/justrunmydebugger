@@ -1,0 +1,8 @@
+{
+    "recommendations": [
+        "vadimcn.vscode-lldb",
+        "matklad.rust-analyzer",
+        "tamasfe.even-better-toml",
+        "chenglou92.rescript-vscode"
+    ]
+}
