@@ -1,13 +1,14 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::fs::{self, DirEntry};
 use std::option::Option;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 use which::which;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
-    name: String,
-    path: String,
+    pub name: String,
+    pub path: String,
 }
 
 struct ConfigFile {
@@ -59,6 +60,10 @@ pub fn get_configs(configs_dir: &Path) -> Option<Vec<Config>> {
     }
 }
 
+pub fn is_avaliable() -> bool {
+    which("openocd").is_ok()
+}
+
 pub fn root_path() -> Option<PathBuf> {
     let binary = which("openocd");
     if let Ok(binary) = binary {
@@ -74,4 +79,23 @@ pub fn scripts_path(openocd_path: PathBuf) -> PathBuf {
 
 pub fn board_path(openocd_path: PathBuf) -> PathBuf {
     scripts_path(openocd_path).join("board")
+}
+
+pub fn start(config: Config) -> String {
+    if is_avaliable() {
+        let out = Command::new("openocd").arg("-f").arg(config.path).output();
+
+        match out {
+            Ok(out) => {
+                if out.status.success() {
+                    String::from_utf8_lossy(&out.stdout).to_string()
+                } else {
+                    String::from_utf8_lossy(&out.stderr).to_string()
+                }
+            }
+            Err(e) => format!("Error while running openocd: {:?}", e),
+        }
+    } else {
+        "Openocd not found!".into()
+    }
 }

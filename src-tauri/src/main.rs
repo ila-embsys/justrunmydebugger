@@ -6,11 +6,12 @@
 mod openocd;
 
 fn main() {
-    println!("Message from Rust");
-
     tauri::Builder::default()
         // This is where you pass in your commands
-        .invoke_handler(tauri::generate_handler![my_custom_command])
+        .invoke_handler(tauri::generate_handler![
+            my_custom_command,
+            start_for_config
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
@@ -31,4 +32,9 @@ fn my_custom_command() -> Vec<openocd::Config> {
         println!("OpenOCD not found!");
         empty
     }
+}
+
+#[tauri::command]
+fn start_for_config(config: openocd::Config) -> String {
+    openocd::start(config)
 }
