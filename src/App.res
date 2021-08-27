@@ -1,19 +1,19 @@
-open Promise
-
-type t = {cmd: string}
-
 type board = {
   name: string,
   path: string,
 }
 
+type config = {config: board}
+
 @module("@tauri-apps/api/tauri") external invoke: string => Promise.t<'data> = "invoke"
+@module("@tauri-apps/api/tauri") external invoke1: (string, config) => Promise.t<'data> = "invoke"
 
 @react.component
 let make = () => {
+  open Promise
   open MaterialUi
   open MaterialUi_Lab
-  open ReactDOM
+  open Belt
 
   let a: array<board> = []
 
@@ -32,20 +32,44 @@ let make = () => {
   }, [count])
 
   <Container maxWidth={Container.MaxWidth.sm}>
-    <Typography> {"Some example text"->React.string} </Typography>
-    <Button color=#Primary variant=#Contained onClick={_ => setCount(count => count + 1)}>
-      {j`Tauri backend invoked ${Belt.Int.toString(count)} times`->React.string}
-    </Button>
-    <Autocomplete
-      id="combo-box-list-boards"
-      options={boards->Belt.Array.map(v => v->MaterialUi.Any)}
-      getOptionLabel={b => b.name}
-      style={Style.make(~width="300", ())}
-      renderInput={params =>
-        React.createElement(
-          MaterialUi.TextField.make,
-          Js.Obj.assign(params->Obj.magic, {"label": "Combo box", "variant": "outlined"}),
-        )}
-    />
+    <Grid container=true spacing=#V6 alignItems=#Stretch>
+      <Grid item=true xs={Grid.Xs._8}>
+        <Autocomplete
+          id="combo-box-list-boards"
+          options={boards->Array.map(v => v->MaterialUi.Any)}
+          getOptionLabel={b => b.name}
+          style={ReactDOM.Style.make(~width="300", ())}
+          renderInput={params =>
+            React.createElement(
+              MaterialUi.TextField.make,
+              Js.Obj.assign(params->Obj.magic, {"label": "Select Boards", "variant": "outlined"}),
+            )}
+        />
+      </Grid>
+      <Grid item=true xs={Grid.Xs._4}>
+        <Grid container=true spacing=#V3 alignItems=#Stretch>
+          <Grid item=true xs={Grid.Xs._6}>
+            <Button color=#Primary variant=#Outlined onClick={_ => setCount(count => count + 1)}>
+              {"Update"}
+            </Button>
+          </Grid>
+          <Grid item=true xs={Grid.Xs._6}> {count->Int.toString->React.string} </Grid>
+        </Grid>
+      </Grid>
+      <Grid item=true xs={Grid.Xs._12}>
+        <Button
+          color=#Primary
+          variant=#Contained
+          onClick={_ =>
+            invoke1("start_for_config", {config: {name: "kek", path: "pek"}})
+            ->then(ret => {
+              Js.Console.log(ret)
+              resolve()
+            })
+            ->ignore}>
+          {"Run"}
+        </Button>
+      </Grid>
+    </Grid>
   </Container>
 }
