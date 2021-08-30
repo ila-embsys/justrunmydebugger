@@ -14,6 +14,7 @@
     "tauri:build": "tauri build -d",
     "tauri:build:prod": "tauri build",
     "start": "run-p re:start rollup:watch tauri:dev",
+    "start:no-rewatch": "run-p rollup:watch tauri:dev",
     "build": "run-s re:build rollup:build tauri:build",
     "build:prod": "run-s re:build rollup:build tauri:build:prod"
   },

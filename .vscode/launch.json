@@ -8,7 +8,7 @@
             "type": "lldb",
             "request": "attach",
             "name": "Attach",
-            "program": "${workspaceFolder}/src-tauri/target/debug/app.exe"
+            "program": "${workspaceFolder}/src-tauri/target/debug/justrunmydebugger.exe"
         },
         {
             "type": "lldb",
