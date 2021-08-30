@@ -9,7 +9,7 @@ fn main() {
     tauri::Builder::default()
         // This is where you pass in your commands
         .invoke_handler(tauri::generate_handler![
-            my_custom_command,
+            get_board_list,
             start_for_config
         ])
         .run(tauri::generate_context!())
@@ -17,7 +17,7 @@ fn main() {
 }
 
 #[tauri::command]
-fn my_custom_command() -> Vec<openocd::Config> {
+fn get_board_list() -> Vec<openocd::Config> {
     let empty = Vec::<openocd::Config>::new();
 
     if let Some(openocd_path) = openocd::root_path() {

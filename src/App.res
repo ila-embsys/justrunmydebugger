@@ -18,7 +18,7 @@ let make = () => {
   let (openOcdOutput, setOpenOcdOutput) = React.useState(() => "")
 
   React.useEffect1(() => {
-    invoke("my_custom_command")
+    invoke("get_board_list")
     ->then(b => {
       setBoards(_ => b)
       resolve()
