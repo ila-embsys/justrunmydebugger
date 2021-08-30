@@ -36,5 +36,6 @@ fn my_custom_command() -> Vec<openocd::Config> {
 
 #[tauri::command]
 fn start_for_config(config: openocd::Config) -> String {
+    println!("The user has desired to run \"{}\" board", config.name);
     openocd::start(config)
 }
