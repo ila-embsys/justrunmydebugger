@@ -16,7 +16,8 @@ let make = (~boards: array<board>, ~onChange: (option<board>) => unit) => {
 
   let handleChangeBoard = (e: ReactEvent.Form.t, _, _) => {
     let value = (e->ReactEvent.Form.target)["innerText"]
-    onChange(boards->Js.Array2.find(value))
+    let found = Js.Array2.find(boards, (b) => b.name == value)
+    onChange(found)
   }
 
   <Autocomplete
