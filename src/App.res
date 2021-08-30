@@ -52,16 +52,19 @@ let make = () => {
             </Grid>
           </Grid>
         </Grid>
-        <Grid item=true xs={Grid.Xs._12}>
-          <StartButton board=selected_board onClick=start></StartButton>
-        </Grid>
+        <Grid item=true xs={Grid.Xs._12}> <StartButton board=selected_board onClick=start /> </Grid>
         <Grid item=true xs={Grid.Xs._12} />
       </Grid>
     </Container>
-    <Typography
-      component={MaterialUi.Typography.Component.string("pre")}
-      style={ReactDOM.Style.make(~fontFamily="monospace", ())}>
-      {openOcdOutput}
-    </Typography>
+    <TextField
+      multiline=true
+      rowsMax={TextField.RowsMax.int(18)}
+      size=#Medium
+      variant=#Outlined
+      fullWidth=true
+      placeholder="Openocd output..."
+      disabled={openOcdOutput->Js.String2.length == 0}
+      value={TextField.Value.string(openOcdOutput)}
+    />
   </>
 }
