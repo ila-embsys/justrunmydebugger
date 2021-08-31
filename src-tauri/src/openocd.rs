@@ -2,10 +2,10 @@ use serde::{Deserialize, Serialize};
 use std::fs::{self, DirEntry};
 use std::option::Option;
 use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::process::{Child, Command, Stdio};
 use which::which;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     pub name: String,
     pub path: String,
@@ -97,5 +97,23 @@ pub fn start(config: Config) -> String {
         }
     } else {
         "Openocd not found!".into()
+    }
+}
+
+pub fn start_in_thread(config: Config) -> Option<Child> {
+    if is_avaliable() {
+        let thread = Command::new("openocd")
+            .arg("-f")
+            .arg(config.path)
+            .stdout(Stdio::piped())
+            .spawn();
+
+        if let Ok(thread) = thread {
+            Some(thread)
+        } else {
+            None
+        }
+    } else {
+        None
     }
 }
