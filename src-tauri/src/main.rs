@@ -5,7 +5,7 @@
 
 use std::sync::Mutex;
 use std::{io::Read, sync::Arc};
-use tauri::{Window};
+use tauri::Window;
 use threadpool::ThreadPool;
 
 mod openocd;
@@ -26,7 +26,7 @@ fn main() {
         })
         // This is where you pass in your commands
         .invoke_handler(tauri::generate_handler![
-            my_custom_command,
+            get_board_list,
             start_for_config,
             kill
         ])
@@ -35,7 +35,7 @@ fn main() {
 }
 
 #[tauri::command]
-fn my_custom_command() -> Vec<openocd::Config> {
+fn get_board_list() -> Vec<openocd::Config> {
     let empty = Vec::<openocd::Config>::new();
 
     if let Some(openocd_path) = openocd::root_path() {
