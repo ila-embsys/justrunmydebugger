@@ -17,7 +17,7 @@ let make = () => {
   open MaterialUi
 
   let default_boards: array<BoardList.board> = []
-  let default_openocd_unlisten: option<Promise.t<'event>> = None
+  let default_openocd_unlisten: option<unit => unit> = None
 
   let (count, setCount) = React.useState(() => 0)
   let (boards, setBoards) = React.useState(() => default_boards)
@@ -38,14 +38,25 @@ let make = () => {
   }, [count])
 
   let start = (board: BoardList.board) => {
+    set_openocd_listener_state(_ => true)
+
     invoke1("start_for_config", {config: board})
     ->then(ret => {
       Js.Console.log(`Invoking OpenOCD return: ${ret}`)
       resolve()
     })
     ->ignore
+  }
 
-    set_openocd_listener_state(_ => true)
+  let kill = () => {
+    invoke("kill")
+    ->then(ret => {
+      Js.Console.log(`Killing OpenOCD return: ${ret}`)
+      resolve()
+    })
+    ->ignore
+
+    set_openocd_listener_state(_ => false)
   }
 
   React.useEffect1(() => {
@@ -77,11 +88,17 @@ let make = () => {
         })
       })
       ->then(unlisten => {
+        set_openocd_unlisten(_ => Some(unlisten))
         Js.Console.log(`Set listener`)
-        set_openocd_unlisten(unlisten)
+
         resolve()
       })
       ->ignore
+    } else {
+      switch openocd_unlisten {
+      | Some(unlisten) => unlisten()
+      | None => Js.Console.log(`Reset listener not found`)
+      }
     }
 
     None
@@ -102,7 +119,11 @@ let make = () => {
             </Grid>
           </Grid>
         </Grid>
-        <Grid item=true xs={Grid.Xs._12}> <StartButton board=selected_board onClick=start /> </Grid>
+        <Grid item=true xs={Grid.Xs._12}>
+          <StartButton
+            board=selected_board doStart=start doStop=kill isStarted=openocd_listener_state
+          />
+        </Grid>
         <Grid item=true xs={Grid.Xs._12} />
       </Grid>
     </Container>
