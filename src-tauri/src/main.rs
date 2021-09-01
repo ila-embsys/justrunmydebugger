@@ -3,10 +3,11 @@
     windows_subsystem = "windows"
 )]
 
+use log::{info, warn, error};
 use std::io::{BufRead, BufReader};
 use std::process::Child;
+use std::sync::Arc;
 use std::sync::Mutex;
-use std::{sync::Arc};
 use tauri::Window;
 use threadpool::ThreadPool;
 
@@ -14,7 +15,7 @@ mod openocd;
 
 struct State {
     openocd_workers: Mutex<ThreadPool>,
-    openocd_proc: Arc<Mutex<Option<Arc<Mutex<Child>>>>>
+    openocd_proc: Arc<Mutex<Option<Arc<Mutex<Child>>>>>,
 }
 
 #[derive(Clone, serde::Serialize)]
@@ -23,10 +24,13 @@ struct OpenocdOutput {
 }
 
 fn main() {
+    ::std::env::set_var("RUST_LOG", "debug");
+    env_logger::init();
+
     tauri::Builder::default()
         .manage(State {
             openocd_workers: Mutex::new(ThreadPool::new(1)),
-            openocd_proc: Arc::new(Mutex::new(None))
+            openocd_proc: Arc::new(Mutex::new(None)),
         })
         // This is where you pass in your commands
         .invoke_handler(tauri::generate_handler![
@@ -51,22 +55,40 @@ fn get_board_list() -> Vec<openocd::Config> {
             None => empty,
         }
     } else {
-        println!("OpenOCD not found!");
+        warn!("OpenOCD not found!");
         empty
     }
 }
 
 #[tauri::command]
-fn kill(state: tauri::State<State>) {
-    let _ = state.openocd_proc.lock().unwrap().as_ref().unwrap().lock().unwrap().kill();
+fn kill(state: tauri::State<State>) -> String {
+    let res = state
+        .openocd_proc
+        .lock()
+        .unwrap()
+        .as_ref()
+        .and_then(|proc| {
+            if let Err(_) = proc.lock().unwrap().kill() {
+                error!("OpenOCD was not killed!");
+                Some("OpenOCD was not killed!")
+            } else {
+                info!("OpenOCD killed.");
+                None
+            }
+        });
+
+    match res {
+        Some(err) => err.into(),
+        None => "".into(),
+    }
 }
 
 #[tauri::command]
 fn start_for_config(config: openocd::Config, state: tauri::State<State>, window: Window) -> String {
-    println!("The user has desired to run \"{}\" board", config.name);
+    info!("The user has desired to run \"{}\" board", config.name);
     let result = state.openocd_workers.lock();
 
-    let openocd_child = state.openocd_proc.clone();
+    let openocd_proc = state.openocd_proc.clone();
 
     if let Ok(workers) = result {
         if workers.active_count() > 0 {
@@ -76,21 +98,30 @@ fn start_for_config(config: openocd::Config, state: tauri::State<State>, window:
                 let command = openocd::start_in_thread(config);
                 if let Some(command) = command {
                     let cmd = Arc::new(Mutex::new(command));
-                    let cmd_to_be_killed = cmd.clone();
-                    openocd_child.lock().unwrap().replace(cmd_to_be_killed);
+                    openocd_proc.lock().unwrap().replace(cmd.clone());
 
                     let stderr = cmd.lock().unwrap().stderr.take().unwrap();
                     let reader = BufReader::new(stderr);
 
-                    reader.lines().filter_map(|line| line.ok()).for_each(|line| {
-                        window
-                            .emit("openocd-output", OpenocdOutput { message: line.clone() })
-                            .unwrap();
-                        println!("!{}", line);
-                    });
+                    info!("OpenOCD started!");
+                    reader
+                        .lines()
+                        .filter_map(|line| line.ok())
+                        .for_each(|line| {
+                            window
+                                .emit(
+                                    "openocd-output",
+                                    OpenocdOutput {
+                                        message: format!("{}\n", line),
+                                    },
+                                )
+                                .unwrap();
+                            info!("-- {}", line);
+                        });
+                    warn!("OpenOCD stopped!");
                 }
             });
-            
+
             "OpenOCD started!".into()
         }
     } else {
