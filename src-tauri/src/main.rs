@@ -3,6 +3,7 @@
     windows_subsystem = "windows"
 )]
 
+use log::{info, warn, error};
 use std::io::{BufRead, BufReader};
 use std::process::Child;
 use std::sync::Arc;
@@ -23,6 +24,9 @@ struct OpenocdOutput {
 }
 
 fn main() {
+    ::std::env::set_var("RUST_LOG", "debug");
+    env_logger::init();
+
     tauri::Builder::default()
         .manage(State {
             openocd_workers: Mutex::new(ThreadPool::new(1)),
@@ -51,7 +55,7 @@ fn get_board_list() -> Vec<openocd::Config> {
             None => empty,
         }
     } else {
-        println!("OpenOCD not found!");
+        warn!("OpenOCD not found!");
         empty
     }
 }
@@ -65,8 +69,10 @@ fn kill(state: tauri::State<State>) -> String {
         .as_ref()
         .and_then(|proc| {
             if let Err(_) = proc.lock().unwrap().kill() {
+                error!("OpenOCD was not killed!");
                 Some("OpenOCD was not killed!")
             } else {
+                info!("OpenOCD killed.");
                 None
             }
         });
@@ -79,7 +85,7 @@ fn kill(state: tauri::State<State>) -> String {
 
 #[tauri::command]
 fn start_for_config(config: openocd::Config, state: tauri::State<State>, window: Window) -> String {
-    println!("The user has desired to run \"{}\" board", config.name);
+    info!("The user has desired to run \"{}\" board", config.name);
     let result = state.openocd_workers.lock();
 
     let openocd_proc = state.openocd_proc.clone();
@@ -97,6 +103,7 @@ fn start_for_config(config: openocd::Config, state: tauri::State<State>, window:
                     let stderr = cmd.lock().unwrap().stderr.take().unwrap();
                     let reader = BufReader::new(stderr);
 
+                    info!("OpenOCD started!");
                     reader
                         .lines()
                         .filter_map(|line| line.ok())
@@ -105,12 +112,13 @@ fn start_for_config(config: openocd::Config, state: tauri::State<State>, window:
                                 .emit(
                                     "openocd-output",
                                     OpenocdOutput {
-                                        message: line.clone(),
+                                        message: format!("{}\n", line),
                                     },
                                 )
                                 .unwrap();
-                            println!("-- {}", line);
+                            info!("-- {}", line);
                         });
+                    warn!("OpenOCD stopped!");
                 }
             });
 
