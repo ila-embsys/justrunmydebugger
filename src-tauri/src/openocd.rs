@@ -105,7 +105,7 @@ pub fn start_in_thread(config: Config) -> Option<Child> {
         let thread = Command::new("openocd")
             .arg("-f")
             .arg(config.path)
-            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
             .spawn();
 
         if let Ok(thread) = thread {

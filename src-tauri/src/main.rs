@@ -3,6 +3,7 @@
     windows_subsystem = "windows"
 )]
 
+use std::io::{BufRead, BufReader};
 use std::sync::Mutex;
 use std::{io::Read, sync::Arc};
 use tauri::Window;
@@ -78,23 +79,14 @@ fn start_for_config(config: openocd::Config, state: tauri::State<State>, window:
                         let _ = cmd_to_be_killed.lock().unwrap().kill();
                     });
 
-                    let mut stdout = cmd.lock().unwrap().stdout.take().unwrap();
-                    loop {
-                        let mut openocd_output = String::new();
-                        let read_size = stdout.read_to_string(&mut openocd_output);
-                        if read_size.is_ok() && !openocd_output.is_empty() {
-                            window
-                                .emit(
-                                    "openocd-output",
-                                    OpenocdOutput {
-                                        message: openocd_output,
-                                    },
-                                )
-                                .unwrap();
-                        }
+                    let stderr = cmd.lock().unwrap().stderr.take().unwrap();
+                    let reader = BufReader::new(stderr);
 
-                        std::thread::sleep(std::time::Duration::from_millis(500))
-                    }
+                    reader.lines().filter_map(|line| line.ok()).for_each(|line| {
+                        window
+                            .emit("openocd-output", OpenocdOutput { message: line })
+                            .unwrap();
+                    });
                 }
             });
 
