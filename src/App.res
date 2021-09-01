@@ -61,6 +61,8 @@ let make = () => {
 
   React.useEffect1(() => {
     if openocd_listener_state == true {
+      set_openocd_output(_ => "")
+      
       listen(~event_name="openocd-output", ~callback=e => {
         Js.Console.log(`Call listener`)
         let payload = e.payload
