@@ -2,20 +2,29 @@ type config = {config: BoardList.board}
 
 type selectedBoardName = option<string>
 
+type payload = {message: string}
+type event = {event_name: string, payload: payload}
+type eventCallBack = event => unit
+
 @module("@tauri-apps/api/tauri") external invoke: string => Promise.t<'data> = "invoke"
 @module("@tauri-apps/api/tauri") external invoke1: (string, config) => Promise.t<'data> = "invoke"
+@module("@tauri-apps/api/event")
+external listen: (~event_name: string, ~callback: eventCallBack) => Promise.t<'event> = "listen"
 
 @react.component
 let make = () => {
   open Promise
   open MaterialUi
 
-  let a: array<BoardList.board> = []
+  let default_boards: array<BoardList.board> = []
+  let default_openocd_unlisten: option<Promise.t<'event>> = None
 
   let (count, setCount) = React.useState(() => 0)
-  let (boards, setBoards) = React.useState(() => a)
+  let (boards, setBoards) = React.useState(() => default_boards)
   let (selected_board: option<BoardList.board>, setSelectedBoard) = React.useState(() => None)
-  let (openOcdOutput, setOpenOcdOutput) = React.useState(() => "")
+  let (openocd_output, set_openocd_output) = React.useState(() => "")
+  let (openocd_listener_state, set_openocd_listener_state) = React.useState(() => false)
+  let (openocd_unlisten, set_openocd_unlisten) = React.useState(() => default_openocd_unlisten)
 
   React.useEffect1(() => {
     invoke("get_board_list")
@@ -31,11 +40,52 @@ let make = () => {
   let start = (board: BoardList.board) => {
     invoke1("start_for_config", {config: board})
     ->then(ret => {
-      setOpenOcdOutput(ret)
+      Js.Console.log(`Invoking OpenOCD return: ${ret}`)
       resolve()
     })
     ->ignore
+
+    set_openocd_listener_state(_ => true)
   }
+
+  React.useEffect1(() => {
+    if openocd_listener_state == true {
+      listen(~event_name="openocd-output", ~callback=e => {
+        Js.Console.log(`Call listener`)
+        let payload = e.payload
+        let message = payload.message
+
+        Js.Console.log(`payload: ${message}`)
+
+        let rec text_cuter = (text: string, length: int) => {
+          if text->Js.String.length > length {
+            let second_line_position = text->Js.String2.indexOf("\n") + 1
+
+            if second_line_position == -1 {
+              text
+            } else {
+              let substring = text->Js.String2.substr(~from=second_line_position)
+              text_cuter(substring, length)
+            }
+          } else {
+            text
+          }
+        }
+
+        set_openocd_output(output => {
+          (output ++ message)->text_cuter(5000)
+        })
+      })
+      ->then(unlisten => {
+        Js.Console.log(`Set listener`)
+        set_openocd_unlisten(unlisten)
+        resolve()
+      })
+      ->ignore
+    }
+
+    None
+  }, [openocd_listener_state])
 
   <>
     <Container maxWidth={Container.MaxWidth.sm}>
@@ -63,8 +113,8 @@ let make = () => {
       variant=#Outlined
       fullWidth=true
       placeholder="Openocd output..."
-      disabled={openOcdOutput->Js.String2.length == 0}
-      value={TextField.Value.string(openOcdOutput)}
+      disabled={openocd_output->Js.String2.length == 0}
+      value={TextField.Value.string(openocd_output)}
     />
   </>
 }
