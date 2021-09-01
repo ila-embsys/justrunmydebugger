@@ -4,8 +4,9 @@
 )]
 
 use std::io::{BufRead, BufReader};
+use std::process::Child;
 use std::sync::Mutex;
-use std::{io::Read, sync::Arc};
+use std::{sync::Arc};
 use tauri::Window;
 use threadpool::ThreadPool;
 
@@ -13,6 +14,7 @@ mod openocd;
 
 struct State {
     openocd_workers: Mutex<ThreadPool>,
+    openocd_proc: Arc<Mutex<Option<Arc<Mutex<Child>>>>>
 }
 
 #[derive(Clone, serde::Serialize)]
@@ -24,6 +26,7 @@ fn main() {
     tauri::Builder::default()
         .manage(State {
             openocd_workers: Mutex::new(ThreadPool::new(1)),
+            openocd_proc: Arc::new(Mutex::new(None))
         })
         // This is where you pass in your commands
         .invoke_handler(tauri::generate_handler![
@@ -54,16 +57,16 @@ fn get_board_list() -> Vec<openocd::Config> {
 }
 
 #[tauri::command]
-fn kill(window: Window) {
-    window
-        .emit("kill-openocd", OpenocdOutput { message: "".into() })
-        .unwrap();
+fn kill(state: tauri::State<State>) {
+    let _ = state.openocd_proc.lock().unwrap().as_ref().unwrap().lock().unwrap().kill();
 }
 
 #[tauri::command]
 fn start_for_config(config: openocd::Config, state: tauri::State<State>, window: Window) -> String {
     println!("The user has desired to run \"{}\" board", config.name);
     let result = state.openocd_workers.lock();
+
+    let openocd_child = state.openocd_proc.clone();
 
     if let Ok(workers) = result {
         if workers.active_count() > 0 {
@@ -74,22 +77,20 @@ fn start_for_config(config: openocd::Config, state: tauri::State<State>, window:
                 if let Some(command) = command {
                     let cmd = Arc::new(Mutex::new(command));
                     let cmd_to_be_killed = cmd.clone();
-
-                    window.listen("kill-openocd", move |_| {
-                        let _ = cmd_to_be_killed.lock().unwrap().kill();
-                    });
+                    openocd_child.lock().unwrap().replace(cmd_to_be_killed);
 
                     let stderr = cmd.lock().unwrap().stderr.take().unwrap();
                     let reader = BufReader::new(stderr);
 
                     reader.lines().filter_map(|line| line.ok()).for_each(|line| {
                         window
-                            .emit("openocd-output", OpenocdOutput { message: line })
+                            .emit("openocd-output", OpenocdOutput { message: line.clone() })
                             .unwrap();
+                        println!("!{}", line);
                     });
                 }
             });
-
+            
             "OpenOCD started!".into()
         }
     } else {
