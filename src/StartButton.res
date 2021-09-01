@@ -25,8 +25,16 @@ let make = (
       }
   }
 
+  let color = {
+    if isStarted {
+      #Secondary
+    } else {
+      #Primary
+    }
+  }
+
   <MaterialUi.Button
-    color=#Primary variant=#Contained onClick=on_click disabled={board->Belt.Option.isNone}>
+    color variant=#Contained onClick=on_click disabled={board->Belt.Option.isNone}>
     {board->buttonMsg}
   </MaterialUi.Button>
 }
