@@ -5,8 +5,11 @@ type board = {
   path: string,
 }
 
+// Tricky convert `MaterialUi.Autocomplete.Value.t` to `board`
+external asBoard: Autocomplete.Value.t => board = "%identity"
+
 @react.component
-let make = (~boards: array<board>, ~onChange: (option<board>) => unit) => {
+let make = (~boards: array<board>, ~onChange: option<board> => unit) => {
   open Belt
   open MaterialUi
 
@@ -14,9 +17,9 @@ let make = (~boards: array<board>, ~onChange: (option<board>) => unit) => {
     <Typography id={b.name}> {b.name} </Typography>
   }
 
-  let handleChangeBoard = (e: ReactEvent.Form.t, _, _) => {
-    let value = (e->ReactEvent.Form.target)["innerText"]
-    let found = Js.Array2.find(boards, (b) => b.name == value)
+  let handleChangeBoard = (_: ReactEvent.Form.t, value: Autocomplete.Value.t, _) => {
+    let board = asBoard(value)
+    let found = Belt.Array.getBy(boards, b => b == board)
     onChange(found)
   }
 
