@@ -19,11 +19,10 @@ let make = () => {
   let default_boards: array<BoardList.board> = []
   let default_openocd_unlisten: option<unit => unit> = None
 
-  let (count, setCount) = React.useState(() => 0)
   let (boards, setBoards) = React.useState(() => default_boards)
   let (selected_board: option<BoardList.board>, setSelectedBoard) = React.useState(() => None)
   let (openocd_output, set_openocd_output) = React.useState(() => "")
-  let (openocd_listener_state, set_openocd_listener_state) = React.useState(() => false)
+  let (is_started, set_is_started) = React.useState(() => false)
   let (openocd_unlisten, set_openocd_unlisten) = React.useState(() => default_openocd_unlisten)
 
   React.useEffect1(() => {
@@ -35,10 +34,10 @@ let make = () => {
     ->ignore
 
     None
-  }, [count])
+  }, [])
 
   let start = (board: BoardList.board) => {
-    set_openocd_listener_state(_ => true)
+    set_openocd_output(_ => "")
 
     invoke1("start_for_config", {config: board})
     ->then(ret => {
@@ -46,6 +45,8 @@ let make = () => {
       resolve()
     })
     ->ignore
+
+    set_is_started(_ => true)
   }
 
   let kill = () => {
@@ -56,12 +57,12 @@ let make = () => {
     })
     ->ignore
 
-    set_openocd_listener_state(_ => false)
+    set_is_started(_ => false)
   }
 
   React.useEffect1(() => {
-    if openocd_listener_state == true {
-      set_openocd_output(_ => "")
+    if openocd_unlisten->Belt.Option.isNone {
+      Js.Console.log(`Listener state: ${Js.String.make(is_started)}`)
 
       listen(~event_name="openocd-output", ~callback=e => {
         Js.Console.log(`Call listener`)
@@ -96,15 +97,9 @@ let make = () => {
         resolve()
       })
       ->ignore
-    } else {
-      switch openocd_unlisten {
-      | Some(unlisten) => unlisten()
-      | None => Js.Console.log(`Reset listener not found`)
-      }
     }
-
     None
-  }, [openocd_listener_state])
+  }, [])
 
   <>
     <Container maxWidth={Container.MaxWidth.sm}>
@@ -123,7 +118,7 @@ let make = () => {
         </Grid>
         <Grid item=true xs={Grid.Xs._12}>
           <StartButton
-            board=selected_board doStart=start doStop=kill isStarted=openocd_listener_state
+            board=selected_board doStart=start doStop=kill isStarted=is_started
           />
         </Grid>
         <Grid item=true xs={Grid.Xs._12} />

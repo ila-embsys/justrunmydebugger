@@ -41,6 +41,7 @@
     "react": "^16.8.1",
     "react-dom": "^16.8.1",
     "rescript-material-ui": "^2.1.2",
-    "rescript-material-ui-lab": "^2.1.2"
+    "rescript-material-ui-lab": "^2.1.2",
+    "bs-platform": "^9.0.2"
   }
 }
