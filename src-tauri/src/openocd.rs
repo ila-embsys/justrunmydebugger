@@ -64,11 +64,28 @@ pub fn is_avaliable() -> bool {
     which("openocd").is_ok()
 }
 
+#[cfg(target_os = "windows")]
 pub fn root_path() -> Option<PathBuf> {
     let binary = which("openocd");
     if let Ok(binary) = binary {
         Some(binary.parent()?.parent()?.to_owned())
     } else {
+        None
+    }
+}
+
+#[cfg(target_os = "linux")]
+pub fn root_path() -> Option<PathBuf> {
+    let unix_path_1 = PathBuf::from("/usr/local/share/openocd");
+    let unix_path_2 = PathBuf::from("/usr/share/openocd");
+
+    if unix_path_1.exists() {
+        Some(unix_path_1)
+    }
+    else if unix_path_2.exists() {
+        Some(unix_path_2)
+    }
+    else {
         None
     }
 }
