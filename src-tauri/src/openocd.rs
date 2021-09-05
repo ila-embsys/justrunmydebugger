@@ -4,6 +4,7 @@ use std::option::Option;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use which::which;
+use strum_macros::EnumString;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
@@ -14,6 +15,27 @@ pub struct Config {
 struct ConfigFile {
     name: String,
     ext: String,
+}
+
+#[derive(EnumString)]
+pub enum ConfigType {
+    BOARD,
+    INTERFACE,
+    TARGET,
+}
+
+pub fn get_configs(config_type: ConfigType) -> Option<Vec<Config>> {
+    if let Some(openocd_path) = root_path() {
+        let path = match config_type {
+            ConfigType::BOARD => board_path(openocd_path),
+            ConfigType::INTERFACE => interface_path(openocd_path),
+            ConfigType::TARGET => target_path(openocd_path),
+        };
+
+        extract_configs_from(path.as_path())
+    } else {
+        None
+    }
 }
 
 fn parse_config_name(dir_entry: &DirEntry) -> Option<ConfigFile> {
@@ -31,9 +53,9 @@ fn parse_config_name(dir_entry: &DirEntry) -> Option<ConfigFile> {
     })
 }
 
-pub fn get_configs(configs_dir: &Path) -> Option<Vec<Config>> {
+fn extract_configs_from(configs_dir: &Path) -> Option<Vec<Config>> {
     if configs_dir.is_dir() {
-        let files = fs::read_dir(configs_dir);
+        let files = fs::read_dir(&configs_dir);
         let mut board_names = Vec::<Config>::new();
 
         if let Ok(files) = files {
@@ -81,11 +103,9 @@ pub fn root_path() -> Option<PathBuf> {
 
     if unix_path_1.exists() {
         Some(unix_path_1)
-    }
-    else if unix_path_2.exists() {
+    } else if unix_path_2.exists() {
         Some(unix_path_2)
-    }
-    else {
+    } else {
         None
     }
 }
@@ -98,23 +118,12 @@ pub fn board_path(openocd_path: PathBuf) -> PathBuf {
     scripts_path(openocd_path).join("board")
 }
 
-pub fn start(config: Config) -> String {
-    if is_avaliable() {
-        let out = Command::new("openocd").arg("-f").arg(config.path).output();
+pub fn interface_path(openocd_path: PathBuf) -> PathBuf {
+    scripts_path(openocd_path).join("interface")
+}
 
-        match out {
-            Ok(out) => {
-                if out.status.success() {
-                    String::from_utf8_lossy(&out.stdout).to_string()
-                } else {
-                    String::from_utf8_lossy(&out.stderr).to_string()
-                }
-            }
-            Err(e) => format!("Error while running openocd: {:?}", e),
-        }
-    } else {
-        "Openocd not found!".into()
-    }
+pub fn target_path(openocd_path: PathBuf) -> PathBuf {
+    scripts_path(openocd_path).join("taget")
 }
 
 pub fn start_as_process(config: Config) -> Option<Child> {
