@@ -117,7 +117,7 @@ pub fn start(config: Config) -> String {
     }
 }
 
-pub fn start_in_thread(config: Config) -> Option<Child> {
+pub fn start_as_process(config: Config) -> Option<Child> {
     if is_avaliable() {
         let thread = Command::new("openocd")
             .arg("-f")
