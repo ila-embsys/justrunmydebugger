@@ -33,8 +33,15 @@ let make = (
     }
   }
 
-  <MaterialUi.Button
-    color variant=#Contained onClick=on_click disabled={board->Belt.Option.isNone}>
+  let disabled = {
+    if isStarted {
+      false
+    } else {
+      board->Belt.Option.isNone
+    }
+  }
+
+  <MaterialUi.Button color variant=#Contained onClick=on_click disabled>
     {board->buttonMsg}
   </MaterialUi.Button>
 }
