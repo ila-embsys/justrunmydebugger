@@ -104,17 +104,8 @@ let make = () => {
   <>
     <Container maxWidth={Container.MaxWidth.sm}>
       <Grid container=true spacing=#V6 alignItems=#Stretch>
-        <Grid item=true xs={Grid.Xs._8}>
+        <Grid item=true xs={Grid.Xs._12}>
           <BoardList boards onChange={board => setSelectedBoard(_ => board)} />
-        </Grid>
-        <Grid item=true xs={Grid.Xs._4}>
-          <Grid container=true spacing=#V3 alignItems=#Stretch>
-            <Grid item=true xs={Grid.Xs._6}>
-              <Button color=#Primary variant=#Outlined onClick={_ => setCount(count => count + 1)}>
-                {"Update"}
-              </Button>
-            </Grid>
-          </Grid>
         </Grid>
         <Grid item=true xs={Grid.Xs._12}>
           <StartButton
