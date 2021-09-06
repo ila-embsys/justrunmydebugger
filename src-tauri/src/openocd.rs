@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
-use std::fs::{self, DirEntry};
+use std::convert::TryFrom;
+use std::fs;
 use std::option::Option;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
@@ -24,6 +25,30 @@ pub enum ConfigType {
     TARGET,
 }
 
+impl TryFrom<&Path> for ConfigFile {
+    type Error = ();
+
+    fn try_from(path: &Path) -> Result<Self, Self::Error> {
+        let config_file = path
+            .extension()
+            .and_then(|ext| ext.to_str())
+            .and_then(|ext| {
+                if ext.ends_with("cfg") {
+                    let file_name = path.file_name().unwrap().to_string_lossy().to_owned();
+
+                    Some(ConfigFile {
+                        name: String::from(file_name),
+                        ext: String::from(ext),
+                    })
+                } else {
+                    None
+                }
+            });
+
+        config_file.ok_or(())
+    }
+}
+
 pub fn get_configs(config_type: ConfigType) -> Option<Vec<Config>> {
     if let Some(openocd_path) = root_path() {
         let path = match config_type {
@@ -38,40 +63,23 @@ pub fn get_configs(config_type: ConfigType) -> Option<Vec<Config>> {
     }
 }
 
-fn parse_config_name(dir_entry: &DirEntry) -> Option<ConfigFile> {
-    let path = dir_entry.path();
-
-    path.extension()?.to_str().and_then(|ext| {
-        ext.ends_with("cfg").then(|| {
-            let file_name = path.file_name().unwrap().to_string_lossy().to_owned();
-
-            ConfigFile {
-                name: String::from(file_name),
-                ext: String::from(ext),
-            }
-        })
-    })
-}
-
 fn extract_configs_from(configs_dir: &Path) -> Option<Vec<Config>> {
     if configs_dir.is_dir() {
         let files = fs::read_dir(&configs_dir);
         let mut board_names = Vec::<Config>::new();
 
         if let Ok(files) = files {
-            for file_or_dir in files.into_iter() {
-                if let Ok(file_or_dir) = file_or_dir {
-                    let config = parse_config_name(&file_or_dir);
+            for file_or_dir in files.into_iter().flatten() {
+                let config = ConfigFile::try_from(file_or_dir.path().as_path());
 
-                    if let Some(config) = config {
-                        let ext_with_dot = format!("{}{}", ".", config.ext);
-                        let board_name = config.name.strip_suffix(&ext_with_dot)?;
+                if let Ok(config) = config {
+                    let ext_with_dot = format!("{}{}", ".", config.ext);
+                    let board_name = config.name.strip_suffix(&ext_with_dot)?;
 
-                        board_names.push(Config {
-                            name: String::from(board_name),
-                            path: file_or_dir.path().display().to_string(),
-                        });
-                    }
+                    board_names.push(Config {
+                        name: String::from(board_name),
+                        path: file_or_dir.path().display().to_string(),
+                    });
                 }
             }
         }
