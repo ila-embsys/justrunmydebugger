@@ -3,5 +3,6 @@
     "rust-analyzer.procMacro.enable": true,
     "rust-analyzer.diagnostics.disabled": [
         "unresolved-macro-call"
-      ]
+    ],
+    "rust-analyzer.checkOnSave.command": "clippy"
 }

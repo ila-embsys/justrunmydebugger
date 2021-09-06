@@ -19,6 +19,7 @@ struct ConfigFile {
 }
 
 #[derive(EnumString)]
+#[allow(clippy::upper_case_acronyms)]
 pub enum ConfigType {
     BOARD,
     INTERFACE,
@@ -134,10 +135,10 @@ pub fn target_path(openocd_path: PathBuf) -> PathBuf {
     scripts_path(openocd_path).join("taget")
 }
 
-pub fn start_as_process(config: &Vec<Config>) -> Option<Child> {
+pub fn start_as_process(config: &[Config]) -> Option<Child> {
     if is_avaliable() {
         let args = config
-            .into_iter()
+            .iter()
             .map(|config| ["-f", config.path.as_str()])
             .flatten()
             .collect::<Vec<&str>>();

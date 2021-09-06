@@ -40,7 +40,7 @@ pub fn get_config_list(config_type: String) -> Vec<Config> {
             }
             Err(_) => {
                 error!("Bad config type!");
-                empty.clone()
+                empty
             }
         }
     } else {
@@ -57,7 +57,7 @@ pub fn kill(state: tauri::State<State>) -> String {
         .unwrap()
         .as_ref()
         .and_then(|proc| {
-            if let Err(_) = proc.lock().unwrap().kill() {
+            if proc.lock().unwrap().kill().is_err()  {
                 error!("OpenOCD was not killed!");
                 Some("OpenOCD was not killed!")
             } else {
