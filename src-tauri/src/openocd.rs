@@ -1,10 +1,11 @@
 use serde::{Deserialize, Serialize};
+use slice_of_array::prelude::*;
 use std::fs::{self, DirEntry};
 use std::option::Option;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
-use which::which;
 use strum_macros::EnumString;
+use which::which;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
@@ -126,11 +127,16 @@ pub fn target_path(openocd_path: PathBuf) -> PathBuf {
     scripts_path(openocd_path).join("taget")
 }
 
-pub fn start_as_process(config: Config) -> Option<Child> {
+pub fn start_as_process(config: &Vec<Config>) -> Option<Child> {
     if is_avaliable() {
+        let args = config
+            .into_iter()
+            .map(|config| ["-f", config.path.as_str()])
+            .flatten()
+            .collect::<Vec<&str>>();
+
         let thread = Command::new("openocd")
-            .arg("-f")
-            .arg(config.path)
+            .args(args)
             .stderr(Stdio::piped())
             .spawn();
 

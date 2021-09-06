@@ -13,8 +13,8 @@ use tauri::Window;
 use threadpool::ThreadPool;
 
 mod openocd;
-use openocd::ConfigType;
 use openocd::Config;
+use openocd::ConfigType;
 
 struct State {
     openocd_workers: Mutex<ThreadPool>,
@@ -40,6 +40,7 @@ fn main() {
             get_board_list,
             get_config_list,
             start_for_config,
+            start,
             kill
         ])
         .run(tauri::generate_context!())
@@ -47,7 +48,7 @@ fn main() {
 }
 
 #[tauri::command]
-#[deprecated(note = "Use get_config_list list with BOARD argument instead.")]
+#[deprecated(note = r#"Use `get_config_list` cmd with "BOARD" argument instead."#)]
 fn get_board_list() -> Vec<Config> {
     let empty = Vec::<Config>::new();
 
@@ -105,8 +106,18 @@ fn kill(state: tauri::State<State>) -> String {
 }
 
 #[tauri::command]
+#[deprecated(note = "Use `start` cmd with `vec![config]` argument instead.")]
 fn start_for_config(config: Config, state: tauri::State<State>, window: Window) -> String {
-    info!("The user has desired to run \"{}\" board", config.name);
+    start(vec![config], state, window)
+}
+
+#[tauri::command]
+fn start(config: Vec<Config>, state: tauri::State<State>, window: Window) -> String {
+    info!(
+        r#"Start openocd with configs: "{:?}""#,
+        config.clone().into_iter().map(|config| { config.path }).collect::<Vec<String>>()
+    );
+
     let result = state.openocd_workers.lock();
 
     let openocd_proc = state.openocd_proc.clone();
@@ -116,7 +127,7 @@ fn start_for_config(config: Config, state: tauri::State<State>, window: Window) 
             "OpenOCD has been already started!".into()
         } else {
             workers.execute(move || {
-                let command = openocd::start_as_process(config);
+                let command = openocd::start_as_process(&config);
                 if let Some(command) = command {
                     let cmd = Arc::new(Mutex::new(command));
                     openocd_proc.lock().unwrap().replace(cmd.clone());
