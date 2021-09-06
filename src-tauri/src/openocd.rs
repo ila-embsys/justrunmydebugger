@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use slice_of_array::prelude::*;
 use std::fs::{self, DirEntry};
 use std::option::Option;
 use std::path::{Path, PathBuf};
