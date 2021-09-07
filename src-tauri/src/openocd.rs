@@ -91,7 +91,7 @@ fn extract_configs_from(configs_dir: &Path) -> Option<Vec<Config>> {
     }
 }
 
-pub fn is_avaliable() -> bool {
+pub fn is_available() -> bool {
     which("openocd").is_ok()
 }
 
@@ -136,7 +136,7 @@ pub fn target_path(openocd_path: PathBuf) -> PathBuf {
 }
 
 pub fn start_as_process(config: &[Config]) -> Option<Child> {
-    if is_avaliable() {
+    if is_available() {
         let args = config
             .iter()
             .map(|config| ["-f", config.path.as_str()])
