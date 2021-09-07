@@ -1,7 +1,7 @@
 @react.component
 let make = (
   ~board: option<BoardList.board>,
-  ~doStart: BoardList.board => unit,
+  ~doStart: array<BoardList.board> => unit,
   ~doStop,
   ~isStarted: bool,
 ) => {
@@ -19,7 +19,7 @@ let make = (
         doStop()
       } else {
         switch board {
-        | Some(board) => doStart(board)
+        | Some(board) => doStart([board])
         | None => Js.Console.log("Reject call non selected board")
         }
       }

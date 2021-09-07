@@ -1,4 +1,4 @@
-type config = {config: BoardList.board}
+type config = {configs: array<BoardList.board>}
 
 type selectedBoardName = option<string>
 
@@ -36,10 +36,10 @@ let make = () => {
     None
   }, [])
 
-  let start = (board: BoardList.board) => {
+  let start = (boards: array<BoardList.board>) => {
     set_openocd_output(_ => "")
 
-    invoke1("start_for_config", {config: board})
+    invoke1("start", {configs: boards})
     ->then(ret => {
       Js.Console.log(`Invoking OpenOCD return: ${ret}`)
       resolve()
