@@ -1,4 +1,5 @@
 type config = {configs: array<BoardList.board>}
+type config_type = {configType: string}
 
 type selectedBoardName = option<string>
 
@@ -7,7 +8,8 @@ type event = {event_name: string, payload: payload}
 type eventCallBack = event => unit
 
 @module("@tauri-apps/api/tauri") external invoke: string => Promise.t<'data> = "invoke"
-@module("@tauri-apps/api/tauri") external invoke1: (string, config) => Promise.t<'data> = "invoke"
+@module("@tauri-apps/api/tauri") external invoke_start: (string, config) => Promise.t<'data> = "invoke"
+@module("@tauri-apps/api/tauri") external invoke_get_config_list: (string, config_type) => Promise.t<'data> = "invoke"
 @module("@tauri-apps/api/event")
 external listen: (~event_name: string, ~callback: eventCallBack) => Promise.t<'event> = "listen"
 
@@ -26,7 +28,7 @@ let make = () => {
   let (openocd_unlisten, set_openocd_unlisten) = React.useState(() => default_openocd_unlisten)
 
   React.useEffect1(() => {
-    invoke("get_board_list")
+    invoke_get_config_list("get_config_list", {configType: "BOARD"})
     ->then(b => {
       setBoards(_ => b)
       resolve()
@@ -39,7 +41,7 @@ let make = () => {
   let start = (boards: array<BoardList.board>) => {
     set_openocd_output(_ => "")
 
-    invoke1("start", {configs: boards})
+    invoke_start("start", {configs: boards})
     ->then(ret => {
       Js.Console.log(`Invoking OpenOCD return: ${ret}`)
       resolve()
