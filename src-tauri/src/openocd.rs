@@ -58,29 +58,48 @@ pub fn get_configs(config_type: ConfigType) -> Option<Vec<Config>> {
             ConfigType::TARGET => target_path(openocd_path),
         };
 
-        extract_configs_from(path.as_path())
+        extract_configs_from(path.as_path(), None)
     } else {
         None
     }
 }
 
-fn extract_configs_from(configs_dir: &Path) -> Option<Vec<Config>> {
+fn extract_configs_from(configs_dir: &Path, name_prefix: Option<String>) -> Option<Vec<Config>> {
     if configs_dir.is_dir() {
         let files = fs::read_dir(&configs_dir);
         let mut board_names = Vec::<Config>::new();
 
         if let Ok(files) = files {
             for file_or_dir in files.into_iter().flatten() {
-                let config = ConfigFile::try_from(file_or_dir.path().as_path());
+                if file_or_dir.path().is_file() {
+                    let config = ConfigFile::try_from(file_or_dir.path().as_path());
 
-                if let Ok(config) = config {
-                    let ext_with_dot = format!("{}{}", ".", config.ext);
-                    let board_name = config.name.strip_suffix(&ext_with_dot)?;
+                    if let Ok(config) = config {
+                        let ext_with_dot = format!("{}{}", ".", config.ext);
+                        let board_name = config.name.strip_suffix(&ext_with_dot)?;
+                        let name = match name_prefix {
+                            Some(ref prefix) => format!("{}/{}", prefix, board_name),
+                            None => board_name.into(),
+                        };
 
-                    board_names.push(Config {
-                        name: String::from(board_name),
-                        path: file_or_dir.path().display().to_string(),
-                    });
+                        board_names.push(Config {
+                            name,
+                            path: file_or_dir.path().display().to_string(),
+                        });
+                    }
+                } else {
+                    let configs_subdir = file_or_dir.path();
+                    let configs_prefix = configs_subdir
+                        .file_name()
+                        .unwrap()
+                        .to_string_lossy()
+                        .to_string();
+
+                    if let Some(configs) =
+                        extract_configs_from(configs_subdir.as_path(), Some(configs_prefix))
+                    {
+                        board_names.extend(configs);
+                    }
                 }
             }
         }
@@ -132,7 +151,7 @@ pub fn interface_path(openocd_path: PathBuf) -> PathBuf {
 }
 
 pub fn target_path(openocd_path: PathBuf) -> PathBuf {
-    scripts_path(openocd_path).join("taget")
+    scripts_path(openocd_path).join("target")
 }
 
 pub fn start_as_process(config: &[Config]) -> Option<Child> {
