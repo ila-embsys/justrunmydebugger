@@ -2,10 +2,9 @@ use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
 use std::fs;
 use std::option::Option;
-use std::path::{Path, PathBuf};
-use std::process::{Child, Command, Stdio};
+use std::path::{Path, PathBuf, Prefix};
 use strum_macros::EnumString;
-use which::which;
+use walkdir::{FilterEntry, WalkDir};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
@@ -13,9 +12,8 @@ pub struct Config {
     pub path: String,
 }
 
-struct ConfigFile {
+struct ConfigFileName {
     name: String,
-    ext: String,
 }
 
 #[derive(EnumString)]
@@ -26,7 +24,7 @@ pub enum ConfigType {
     TARGET,
 }
 
-impl TryFrom<&Path> for ConfigFile {
+impl TryFrom<&Path> for ConfigFileName {
     type Error = ();
 
     fn try_from(path: &Path) -> Result<Self, Self::Error> {
@@ -35,11 +33,19 @@ impl TryFrom<&Path> for ConfigFile {
             .and_then(|ext| ext.to_str())
             .and_then(|ext| {
                 if ext.ends_with("cfg") {
-                    let file_name = path.file_name().unwrap().to_string_lossy().to_owned();
+                    let path = path.to_string_lossy().to_owned();
+                    let ext_with_dot = format!("{}{}", ".", &ext);
+                    let path_without_ext: String = path
+                        .to_string()
+                        .strip_suffix(&ext_with_dot)
+                        .expect(
+                            "Any relative path to file must end with the same file \
+                             extension as his absolute parent.",
+                        )
+                        .into();
 
-                    Some(ConfigFile {
-                        name: String::from(file_name),
-                        ext: String::from(ext),
+                    Some(ConfigFileName {
+                        name: path_without_ext,
                     })
                 } else {
                     None
@@ -66,33 +72,36 @@ pub fn get_configs(config_type: ConfigType) -> Option<Vec<Config>> {
 
 fn extract_configs_from(configs_dir: &Path) -> Option<Vec<Config>> {
     if configs_dir.is_dir() {
-        let files = fs::read_dir(&configs_dir);
-        let mut board_names = Vec::<Config>::new();
+        let root_iter = WalkDir::new(configs_dir)
+            .contents_first(true)
+            .into_iter()
+            .filter_entry(|e| e.path().is_file())
+            .flatten();
 
-        if let Ok(files) = files {
-            for file_or_dir in files.into_iter().flatten() {
-                let config = ConfigFile::try_from(file_or_dir.path().as_path());
+        Some(
+            root_iter
+                .map(|entry| {
+                    let path = entry.path().to_path_buf();
+                    let relative_path = path
+                        .strip_prefix(configs_dir)
+                        .expect("configs_dir must be a parent of it's own entries by design.");
 
-                if let Ok(config) = config {
-                    let ext_with_dot = format!("{}{}", ".", config.ext);
-                    let board_name = config.name.strip_suffix(&ext_with_dot)?;
-
-                    board_names.push(Config {
-                        name: String::from(board_name),
-                        path: file_or_dir.path().display().to_string(),
-                    });
-                }
-            }
-        }
-
-        Some(board_names)
+                    let config = ConfigFileName::try_from(relative_path);
+                    if let Ok(config) = config {
+                        Some(Config {
+                            name: config.name,
+                            path: entry.path().display().to_string(),
+                        })
+                    } else {
+                        None
+                    }
+                })
+                .flatten()
+                .collect::<Vec<Config>>(),
+        )
     } else {
         None
     }
-}
-
-pub fn is_available() -> bool {
-    which("openocd").is_ok()
 }
 
 #[cfg(target_os = "windows")]
@@ -132,28 +141,5 @@ pub fn interface_path(openocd_path: PathBuf) -> PathBuf {
 }
 
 pub fn target_path(openocd_path: PathBuf) -> PathBuf {
-    scripts_path(openocd_path).join("taget")
-}
-
-pub fn start_as_process(config: &[Config]) -> Option<Child> {
-    if is_available() {
-        let args = config
-            .iter()
-            .map(|config| ["-f", config.path.as_str()])
-            .flatten()
-            .collect::<Vec<&str>>();
-
-        let thread = Command::new("openocd")
-            .args(args)
-            .stderr(Stdio::piped())
-            .spawn();
-
-        if let Ok(thread) = thread {
-            Some(thread)
-        } else {
-            None
-        }
-    } else {
-        None
-    }
+    scripts_path(openocd_path).join("target")
 }

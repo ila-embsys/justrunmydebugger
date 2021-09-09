@@ -3,9 +3,8 @@ use std::io::{BufRead, BufReader};
 use std::sync::{Arc, Mutex};
 use tauri::Window;
 
-use crate::openocd;
-use crate::openocd::Config;
-use crate::openocd::ConfigType;
+use crate::openocd::config::{get_configs, Config, ConfigType};
+use crate::openocd::proc as openocd;
 use crate::state::State;
 use std::str::FromStr;
 
@@ -25,7 +24,7 @@ pub fn get_board_list() -> Vec<Config> {
     let empty = Vec::<Config>::new();
 
     if openocd::is_available() {
-        let boards = openocd::get_configs(ConfigType::BOARD);
+        let boards = get_configs(ConfigType::BOARD);
         boards.map_or(empty, |boards| boards)
     } else {
         warn!("OpenOCD not found!");
@@ -50,7 +49,7 @@ pub fn get_config_list(config_type: String) -> Vec<Config> {
     if openocd::is_available() {
         match ConfigType::from_str(config_type.as_str()) {
             Ok(board_type) => {
-                let boards = openocd::get_configs(board_type);
+                let boards = get_configs(board_type);
                 boards.map_or(empty, |boards| boards)
             }
             Err(_) => {
@@ -92,7 +91,7 @@ pub fn kill(state: tauri::State<State>) -> String {
 }
 
 /// Same as `start` but only for one config as OpenOCD argument
-/// 
+///
 /// See `start` docs.
 #[tauri::command]
 #[deprecated(note = "Use `start` cmd with `vec![config]` argument instead.")]
@@ -104,7 +103,7 @@ pub fn start_for_config(config: Config, state: tauri::State<State>, window: Wind
 ///
 /// Started process emits event `openocd-output` on every received line of
 /// openocd output to stderr. Return status as a string.
-/// 
+///
 /// List of configs can be retrieved with `get_config_list`.
 ///
 /// # Arguments
@@ -112,11 +111,11 @@ pub fn start_for_config(config: Config, state: tauri::State<State>, window: Wind
 /// * `configs` — an array of `Config` to run OpenOCD with.
 /// * `state` — a tauri object for storing openocd process handler.
 /// * `window` — a tauri windows object to emit events.
-/// 
+///
 /// # Example
-/// 
+///
 /// Start `openocd -f "<script_path>/interface/stlink-v2.cfg" -f "<script_path>/target/stm32f0x.cfg"`:
-/// 
+///
 /// ```
 /// start(vec![
 ///     Board{name: "stlink-v2", path: "<script_path>/interface/stlink-v2.cfg"},
@@ -144,7 +143,7 @@ pub fn start(configs: Vec<Config>, state: tauri::State<State>, window: Window) -
             "OpenOCD has been already started!".into()
         } else {
             workers.execute(move || {
-                let command = openocd::start_as_process(&configs);
+                let command = openocd::start(&configs);
                 if let Some(command) = command {
                     let cmd = Arc::new(Mutex::new(command));
                     openocd_proc.lock().unwrap().replace(cmd.clone());
