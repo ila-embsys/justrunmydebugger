@@ -1,10 +1,9 @@
 use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
-use std::fs;
 use std::option::Option;
-use std::path::{Path, PathBuf, Prefix};
+use std::path::{Path, PathBuf};
 use strum_macros::EnumString;
-use walkdir::{FilterEntry, WalkDir};
+use walkdir::WalkDir;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
@@ -106,7 +105,7 @@ fn extract_configs_from(configs_dir: &Path) -> Option<Vec<Config>> {
 
 #[cfg(target_os = "windows")]
 pub fn root_path() -> Option<PathBuf> {
-    let binary = which("openocd");
+    let binary = which::which("openocd");
     if let Ok(binary) = binary {
         Some(binary.parent()?.parent()?.to_owned())
     } else {
