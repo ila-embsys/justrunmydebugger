@@ -8,8 +8,10 @@ type event = {event_name: string, payload: payload}
 type eventCallBack = event => unit
 
 @module("@tauri-apps/api/tauri") external invoke: string => Promise.t<'data> = "invoke"
-@module("@tauri-apps/api/tauri") external invoke_start: (string, config) => Promise.t<'data> = "invoke"
-@module("@tauri-apps/api/tauri") external invoke_get_config_list: (string, config_type) => Promise.t<'data> = "invoke"
+@module("@tauri-apps/api/tauri")
+external invoke_start: (string, config) => Promise.t<'data> = "invoke"
+@module("@tauri-apps/api/tauri")
+external invoke_get_config_list: (string, config_type) => Promise.t<'data> = "invoke"
 @module("@tauri-apps/api/event")
 external listen: (~event_name: string, ~callback: eventCallBack) => Promise.t<'event> = "listen"
 
@@ -19,10 +21,19 @@ let make = () => {
   open MaterialUi
 
   let default_boards: array<BoardList.board> = []
+  let default_interfaces: array<BoardList.board> = []
+  let default_targets: array<BoardList.board> = []
+
   let default_openocd_unlisten: option<unit => unit> = None
 
   let (boards, setBoards) = React.useState(() => default_boards)
+  let (interfaces, setInterfaces) = React.useState(() => default_interfaces)
+  let (targets, setTargets) = React.useState(() => default_targets)
+
   let (selected_board: option<BoardList.board>, setSelectedBoard) = React.useState(() => None)
+  let (selected_interface: option<BoardList.board>, setSelectedInterface) = React.useState(() => None)
+  let (selected_target: option<BoardList.board>, setSelectedTarget) = React.useState(() => None)
+
   let (openocd_output, set_openocd_output) = React.useState(() => "")
   let (is_started, set_is_started) = React.useState(() => false)
   let (openocd_unlisten, set_openocd_unlisten) = React.useState(() => default_openocd_unlisten)
@@ -31,6 +42,28 @@ let make = () => {
     invoke_get_config_list("get_config_list", {configType: "BOARD"})
     ->then(b => {
       setBoards(_ => b)
+      resolve()
+    })
+    ->ignore
+
+    None
+  }, [])
+
+  React.useEffect1(() => {
+    invoke_get_config_list("get_config_list", {configType: "INTERFACE"})
+    ->then(b => {
+      setInterfaces(_ => b)
+      resolve()
+    })
+    ->ignore
+
+    None
+  }, [])
+
+  React.useEffect1(() => {
+    invoke_get_config_list("get_config_list", {configType: "TARGET"})
+    ->then(b => {
+      setTargets(_ => b)
       resolve()
     })
     ->ignore
@@ -107,12 +140,12 @@ let make = () => {
     <Container maxWidth={Container.MaxWidth.sm}>
       <Grid container=true spacing=#V6 alignItems=#Stretch>
         <Grid item=true xs={Grid.Xs._12}>
-          <BoardList boards onChange={board => setSelectedBoard(_ => board)} />
+          <BoardList selector_name="board" items=boards onChange={board => setSelectedBoard(_ => board)} />
+          <BoardList selector_name="interface" items=interfaces onChange={interface => setSelectedInterface(_ => interface)} />
+          <BoardList selector_name="target" items=targets onChange={target => setSelectedTarget(_ => target)} />
         </Grid>
         <Grid item=true xs={Grid.Xs._12}>
-          <StartButton
-            board=selected_board doStart=start doStop=kill isStarted=is_started
-          />
+          <StartButton board=selected_board doStart=start doStop=kill isStarted=is_started />
         </Grid>
         <Grid item=true xs={Grid.Xs._12} />
       </Grid>
