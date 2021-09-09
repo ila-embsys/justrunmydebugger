@@ -74,7 +74,6 @@ fn extract_configs_from(configs_dir: &Path) -> Option<Vec<Config>> {
         let root_iter = WalkDir::new(configs_dir)
             .contents_first(true)
             .into_iter()
-            .filter_entry(|e| e.path().is_file())
             .flatten();
 
         Some(
