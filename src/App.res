@@ -1,4 +1,4 @@
-type config = {configs: array<BoardList.board>}
+type config = {configs: array<BoardList.openocd_config_item>}
 type config_type = {configType: string}
 
 type selectedBoardName = option<string>
@@ -20,9 +20,9 @@ let make = () => {
   open Promise
   open MaterialUi
 
-  let default_boards: array<BoardList.board> = []
-  let default_interfaces: array<BoardList.board> = []
-  let default_targets: array<BoardList.board> = []
+  let default_boards: array<BoardList.openocd_config_item> = []
+  let default_interfaces: array<BoardList.openocd_config_item> = []
+  let default_targets: array<BoardList.openocd_config_item> = []
 
   let default_openocd_unlisten: option<unit => unit> = None
 
@@ -30,13 +30,24 @@ let make = () => {
   let (interfaces, setInterfaces) = React.useState(() => default_interfaces)
   let (targets, setTargets) = React.useState(() => default_targets)
 
-  let (selected_board: option<BoardList.board>, setSelectedBoard) = React.useState(() => None)
-  let (selected_interface: option<BoardList.board>, setSelectedInterface) = React.useState(() => None)
-  let (selected_target: option<BoardList.board>, setSelectedTarget) = React.useState(() => None)
+  let (
+    selected_board: option<BoardList.openocd_config_item>,
+    setSelectedBoard,
+  ) = React.useState(() => None)
+  let (
+    selected_interface: option<BoardList.openocd_config_item>,
+    setSelectedInterface,
+  ) = React.useState(() => None)
+  let (
+    selected_target: option<BoardList.openocd_config_item>,
+    setSelectedTarget,
+  ) = React.useState(() => None)
 
   let (openocd_output, set_openocd_output) = React.useState(() => "")
   let (is_started, set_is_started) = React.useState(() => false)
   let (openocd_unlisten, set_openocd_unlisten) = React.useState(() => default_openocd_unlisten)
+
+  let (tab_panel_index, setTabPanelIndex) = React.useState(() => 0)
 
   React.useEffect1(() => {
     invoke_get_config_list("get_config_list", {configType: "BOARD"})
@@ -71,7 +82,7 @@ let make = () => {
     None
   }, [])
 
-  let start = (boards: array<BoardList.board>) => {
+  let start = (boards: array<BoardList.openocd_config_item>) => {
     set_openocd_output(_ => "")
 
     invoke_start("start", {configs: boards})
@@ -136,20 +147,81 @@ let make = () => {
     None
   }, [])
 
-  <>
-    <Container maxWidth={Container.MaxWidth.sm}>
-      <Grid container=true spacing=#V6 alignItems=#Stretch>
+  let tab_label_board = "Board"->React.string
+  let tab_label_custom = "Custom"->React.string
+
+  let handleTabPanelChange = (_, newValue: MaterialUi_Types.any) => {
+    setTabPanelIndex(newValue->MaterialUi_Types.anyUnpack)
+  }
+
+  let tab_panel_value = tab_panel_index->MaterialUi_Types.Any
+
+  let tab_content = (index: int) => {
+    switch index {
+    | 0 =>
+      <Grid container=true spacing=#V1 alignItems=#Stretch>
         <Grid item=true xs={Grid.Xs._12}>
-          <BoardList selector_name="board" items=boards onChange={board => setSelectedBoard(_ => board)} />
-          <BoardList selector_name="interface" items=interfaces onChange={interface => setSelectedInterface(_ => interface)} />
-          <BoardList selector_name="target" items=targets onChange={target => setSelectedTarget(_ => target)} />
+          <BoardList
+            selector_name="board" items=boards onChange={board => setSelectedBoard(_ => board)}
+          />
         </Grid>
         <Grid item=true xs={Grid.Xs._12}>
-          <StartButton board=selected_board doStart=start doStop=kill isStarted=is_started />
+          <StartButton
+            item_name="board"
+            config_item=selected_board
+            doStart=start
+            doStop=kill
+            isStarted=is_started
+          />
         </Grid>
-        <Grid item=true xs={Grid.Xs._12} />
       </Grid>
-    </Container>
+
+    | 1 =>
+      <Grid container=true spacing=#V1 alignItems=#Stretch>
+        <Grid item=true xs={Grid.Xs._6}>
+          <BoardList
+            selector_name="interface"
+            items=interfaces
+            onChange={interface => setSelectedInterface(_ => interface)}
+          />
+        </Grid>
+        <Grid item=true xs={Grid.Xs._6}>
+          <BoardList
+            selector_name="target" items=targets onChange={target => setSelectedTarget(_ => target)}
+          />
+        </Grid>
+        <Grid item=true xs={Grid.Xs._12}>
+          <StartButton
+            item_name="target with interface"
+            config_item=selected_target
+            doStart=start
+            doStop=kill
+            isStarted=is_started
+          />
+        </Grid>
+      </Grid>
+
+    | _ => <> </>
+    }
+  }
+
+  let tab_content_resolve = tab_content(tab_panel_index)
+
+  <>
+    // <Container maxWidth={Container.MaxWidth.sm}>
+    <Grid container=true spacing=#V6 alignItems=#Stretch>
+      <Grid item=true xs={Grid.Xs._3}>
+        <Tabs orientation=#Vertical onChange=handleTabPanelChange value=tab_panel_value>
+          <Tab label=tab_label_board /> <Tab label=tab_label_custom />
+        </Tabs>
+      </Grid>
+      <Grid item=true xs={Grid.Xs._9}> tab_content_resolve </Grid>
+      // <Grid item=true xs={Grid.Xs._12}>
+      //   <StartButton board=selected_board doStart=start doStop=kill isStarted=is_started />
+      // </Grid>
+      <Grid item=true xs={Grid.Xs._12} />
+    </Grid>
+    // </Container>
     <TextField
       multiline=true
       rowsMax={TextField.RowsMax.int(18)}

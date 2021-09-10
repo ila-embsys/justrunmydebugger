@@ -1,15 +1,16 @@
 @react.component
 let make = (
-  ~board: option<BoardList.board>,
-  ~doStart: array<BoardList.board> => unit,
+  ~item_name: string = "config",
+  ~config_item: option<BoardList.openocd_config_item>,
+  ~doStart: array<BoardList.openocd_config_item> => unit,
   ~doStop,
   ~isStarted: bool,
 ) => {
-  let buttonMsg = (board: option<BoardList.board>) => {
+  let buttonMsg = (board: option<BoardList.openocd_config_item>) => {
     if isStarted {
       "Stop"
     } else {
-      board->Belt.Option.mapWithDefault("Please select the board", b => `Run "${b.name}" board`)
+      board->Belt.Option.mapWithDefault(`Please select any ${item_name}`, b => `Run the "${b.name}" ${item_name}`)
     }
   }
 
@@ -18,9 +19,9 @@ let make = (
       if isStarted {
         doStop()
       } else {
-        switch board {
-        | Some(board) => doStart([board])
-        | None => Js.Console.log("Reject call non selected board")
+        switch config_item {
+        | Some(config_item) => doStart([config_item])
+        | None => Js.Console.log(`Reject call non selected ${item_name}`)
         }
       }
   }
@@ -37,11 +38,11 @@ let make = (
     if isStarted {
       false
     } else {
-      board->Belt.Option.isNone
+      config_item->Belt.Option.isNone
     }
   }
 
   <MaterialUi.Button color variant=#Contained onClick=on_click disabled>
-    {board->buttonMsg}
+    {config_item->buttonMsg}
   </MaterialUi.Button>
 }

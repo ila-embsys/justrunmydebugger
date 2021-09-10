@@ -9,7 +9,11 @@ type openocd_config_item = {
 external asOcdConfig: Autocomplete.Value.t => openocd_config_item = "%identity"
 
 @react.component
-let make = (~selector_name: string, ~items: array<openocd_config_item>, ~onChange: option<openocd_config_item> => unit) => {
+let make = (
+  ~selector_name: string,
+  ~items: array<openocd_config_item>,
+  ~onChange: option<openocd_config_item> => unit,
+) => {
   open Belt
   open MaterialUi
 
@@ -23,17 +27,31 @@ let make = (~selector_name: string, ~items: array<openocd_config_item>, ~onChang
     onChange(found)
   }
 
-  <Autocomplete
-    id="combo-box-list-openocd-items"
-    options={items->Array.map(v => v->MaterialUi.Any)}
-    getOptionLabel={item => item.name}
-    style={ReactDOM.Style.make(~width="300", ())}
-    renderInput={params =>
-      React.createElement(
-        MaterialUi.TextField.make,
-        Js.Obj.assign(params->Obj.magic, {"label": `Select ${selector_name}`, "variant": "outlined"}),
-      )}
-    onChange=handleChangeItem
-    renderOption=optionRender
-  />
+  // let badgeContent = {
+  //   let length = items->Belt.Array.length
+  //   length->Belt.Int.toString->React.string
+  // }
+
+  let id = {
+    `combo-box-list-${selector_name}`
+  }
+
+  // <Badge max=MaterialUi_Types.Number.int(999) badgeContent color=#Primary>
+    <Autocomplete
+      id
+      options={items->Array.map(v => v->MaterialUi.Any)}
+      getOptionLabel={item => item.name}
+      // style={ReactDOM.Style.make(~width="300", ())}
+      renderInput={params =>
+        React.createElement(
+          MaterialUi.TextField.make,
+          Js.Obj.assign(
+            params->Obj.magic,
+            {"label": `Select any ${selector_name}`, "variant": "outlined"},
+          ),
+        )}
+      onChange=handleChangeItem
+      renderOption=optionRender
+    />
+  // </Badge>
 }
