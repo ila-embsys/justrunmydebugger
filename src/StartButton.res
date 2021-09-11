@@ -1,16 +1,19 @@
 @react.component
 let make = (
-  ~item_name: string = "config",
+  ~item_name: string="config",
   ~config_item: option<BoardList.openocd_config_item>,
   ~doStart: array<BoardList.openocd_config_item> => unit,
   ~doStop,
   ~isStarted: bool,
+  ~isReady: unit => bool=() => true,
 ) => {
   let buttonMsg = (board: option<BoardList.openocd_config_item>) => {
     if isStarted {
       "Stop"
     } else {
-      board->Belt.Option.mapWithDefault(`Please select any ${item_name}`, b => `Run the "${b.name}" ${item_name}`)
+      board->Belt.Option.mapWithDefault(`Please select any ${item_name}`, b =>
+        `Run the "${b.name}" ${item_name}`
+      )
     }
   }
 
@@ -38,7 +41,7 @@ let make = (
     if isStarted {
       false
     } else {
-      config_item->Belt.Option.isNone
+      config_item->Belt.Option.isNone || !isReady()
     }
   }
 

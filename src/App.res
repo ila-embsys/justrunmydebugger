@@ -147,22 +147,20 @@ let make = () => {
     None
   }, [])
 
-  let tab_label_board = "Board"->React.string
-  let tab_label_custom = "Custom"->React.string
-
   let handleTabPanelChange = (_, newValue: MaterialUi_Types.any) => {
     setTabPanelIndex(newValue->MaterialUi_Types.anyUnpack)
   }
 
-  let tab_panel_value = tab_panel_index->MaterialUi_Types.Any
-
   let tab_content = (index: int) => {
     switch index {
     | 0 =>
-      <Grid container=true spacing=#V1 alignItems=#Stretch>
+      <Grid container=true spacing=#V3 alignItems=#Stretch>
         <Grid item=true xs={Grid.Xs._12}>
           <BoardList
-            selector_name="board" items=boards onChange={board => setSelectedBoard(_ => board)}
+            selector_name="board"
+            items=boards
+            onChange={board => setSelectedBoard(_ => board)}
+            selected=selected_board
           />
         </Grid>
         <Grid item=true xs={Grid.Xs._12}>
@@ -177,17 +175,21 @@ let make = () => {
       </Grid>
 
     | 1 =>
-      <Grid container=true spacing=#V1 alignItems=#Stretch>
+      <Grid container=true spacing=#V3 alignItems=#Stretch>
         <Grid item=true xs={Grid.Xs._6}>
           <BoardList
             selector_name="interface"
             items=interfaces
             onChange={interface => setSelectedInterface(_ => interface)}
+            selected=selected_interface
           />
         </Grid>
         <Grid item=true xs={Grid.Xs._6}>
           <BoardList
-            selector_name="target" items=targets onChange={target => setSelectedTarget(_ => target)}
+            selector_name="target"
+            items=targets
+            onChange={target => setSelectedTarget(_ => target)}
+            selected=selected_target
           />
         </Grid>
         <Grid item=true xs={Grid.Xs._12}>
@@ -197,6 +199,9 @@ let make = () => {
             doStart=start
             doStop=kill
             isStarted=is_started
+            isReady={_ => {
+              !(selected_target->Belt.Option.isNone) && !(selected_interface->Belt.Option.isNone)
+            }}
           />
         </Grid>
       </Grid>
@@ -208,29 +213,33 @@ let make = () => {
   let tab_content_resolve = tab_content(tab_panel_index)
 
   <>
-    // <Container maxWidth={Container.MaxWidth.sm}>
-    <Grid container=true spacing=#V6 alignItems=#Stretch>
+    <Grid container=true spacing=#V1 alignItems=#Stretch>
       <Grid item=true xs={Grid.Xs._3}>
-        <Tabs orientation=#Vertical onChange=handleTabPanelChange value=tab_panel_value>
-          <Tab label=tab_label_board /> <Tab label=tab_label_custom />
-        </Tabs>
+        <Paper variant=#Outlined>
+          <Tabs orientation=#Vertical onChange=handleTabPanelChange value={tab_panel_index->Any}>
+            <Tab label={"A predefined Board"->React.string} />
+            <Tab label={"A Target with an Interface"->React.string} />
+          </Tabs>
+        </Paper>
       </Grid>
-      <Grid item=true xs={Grid.Xs._9}> tab_content_resolve </Grid>
-      // <Grid item=true xs={Grid.Xs._12}>
-      //   <StartButton board=selected_board doStart=start doStop=kill isStarted=is_started />
-      // </Grid>
+      <Grid item=true xs={Grid.Xs._9}>
+        <Card elevation={MaterialUi_Types.Number.int(3)}>
+          <CardContent> tab_content_resolve </CardContent>
+        </Card>
+      </Grid>
       <Grid item=true xs={Grid.Xs._12} />
     </Grid>
-    // </Container>
-    <TextField
-      multiline=true
-      rowsMax={TextField.RowsMax.int(18)}
-      size=#Medium
-      variant=#Outlined
-      fullWidth=true
-      placeholder="Openocd output..."
-      disabled={openocd_output->Js.String2.length == 0}
-      value={TextField.Value.string(openocd_output)}
-    />
+    <Paper elevation={MaterialUi_Types.Number.int(0)}>
+      <TextField
+        multiline=true
+        rowsMax={TextField.RowsMax.int(18)}
+        size=#Medium
+        variant=#Outlined
+        fullWidth=true
+        placeholder="Openocd output..."
+        disabled={openocd_output->Js.String2.length == 0}
+        value={TextField.Value.string(openocd_output)}
+      />
+    </Paper>
   </>
 }
