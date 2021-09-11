@@ -198,7 +198,7 @@ let make = () => {
         <Grid item=true xs={Grid.Xs._12}>
           <StartButton
             item_name="target with interface"
-            config_items=[selected_target, selected_interface]
+            config_items=[selected_interface, selected_target]
             doStart=start
             doStop=kill
             isStarted=is_started
