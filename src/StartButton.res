@@ -1,7 +1,7 @@
 @react.component
 let make = (
   ~item_name: string="config",
-  ~config_item: option<BoardList.openocd_config_item>,
+  ~config_items: array<option<BoardList.openocd_config_item>>,
   ~doStart: array<BoardList.openocd_config_item> => unit,
   ~doStop,
   ~isStarted: bool,
@@ -11,9 +11,10 @@ let make = (
     if isStarted {
       "Stop"
     } else {
-      board->Belt.Option.mapWithDefault(`Please select any ${item_name}`, b =>
-        `Run the "${b.name}" ${item_name}`
-      )
+      switch board {
+      | Some(b) => `Run the "${b.name}" ${item_name}`
+      | _ => `Please select any ${item_name}`
+      }
     }
   }
 
@@ -22,10 +23,11 @@ let make = (
       if isStarted {
         doStop()
       } else {
-        switch config_item {
-        | Some(config_item) => doStart([config_item])
-        | None => Js.Console.log(`Reject call non selected ${item_name}`)
-        }
+        if (isReady())
+        {
+          let clear_configs = config_items->Belt.Array.map((item) => Belt.Option.getExn(item))
+          doStart(clear_configs)
+        } 
       }
   }
 
@@ -41,11 +43,11 @@ let make = (
     if isStarted {
       false
     } else {
-      config_item->Belt.Option.isNone || !isReady()
+      !isReady()
     }
   }
 
   <MaterialUi.Button color variant=#Contained onClick=on_click disabled>
-    {config_item->buttonMsg}
+    {config_items[0]->buttonMsg}
   </MaterialUi.Button>
 }

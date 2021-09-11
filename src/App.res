@@ -166,10 +166,13 @@ let make = () => {
         <Grid item=true xs={Grid.Xs._12}>
           <StartButton
             item_name="board"
-            config_item=selected_board
+            config_items=[selected_board]
             doStart=start
             doStop=kill
             isStarted=is_started
+            isReady={_ => {
+              !(selected_board->Belt.Option.isNone)
+            }}
           />
         </Grid>
       </Grid>
@@ -195,7 +198,7 @@ let make = () => {
         <Grid item=true xs={Grid.Xs._12}>
           <StartButton
             item_name="target with interface"
-            config_item=selected_target
+            config_items=[selected_target, selected_interface]
             doStart=start
             doStop=kill
             isStarted=is_started
