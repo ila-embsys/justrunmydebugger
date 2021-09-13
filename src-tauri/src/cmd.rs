@@ -1,15 +1,16 @@
 use log::{error, info, warn};
 use std::io::{BufRead, BufReader};
+use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 use tauri::Window;
 
+use crate::config::AppConfig;
 use crate::openocd::config::{get_configs, Config, ConfigType};
 use crate::openocd::proc as openocd;
 use crate::state::State;
-use std::str::FromStr;
 
 #[derive(Clone, serde::Serialize)]
-struct OpenocdOutput {
+struct Payload {
     message: String,
 }
 
@@ -159,7 +160,7 @@ pub fn start(configs: Vec<Config>, state: tauri::State<State>, window: Window) -
                             window
                                 .emit(
                                     "openocd-output",
-                                    OpenocdOutput {
+                                    Payload {
                                         message: format!("{}\n", line),
                                     },
                                 )
@@ -174,5 +175,33 @@ pub fn start(configs: Vec<Config>, state: tauri::State<State>, window: Window) -
         }
     } else {
         "OpenOCD start failed!".into()
+    }
+}
+
+/// Dump selected fields with configs in GUI
+/// 
+/// Return string with status.
+///
+#[tauri::command]
+pub fn dump_state(dumped: AppConfig) -> String {
+    let res = confy::store("justrunmydebugger-config", dumped);
+
+    match res {
+        Ok(_) => "Config was dumped!".into(),
+        Err(e) => format!("Config dump failed: {}", e),
+    }
+}
+
+/// Return previously dumped fields with configs
+/// 
+/// Configs contain empty name/path if their was not previously dumped.
+///
+#[tauri::command]
+pub fn load_state() -> AppConfig {
+    let res = confy::load::<AppConfig>("justrunmydebugger-config");
+
+    match res {
+        Ok(config) => config,
+        Err(_) => AppConfig::default(),
     }
 }
