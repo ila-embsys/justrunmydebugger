@@ -8,6 +8,7 @@ use std::sync::Mutex;
 use threadpool::ThreadPool;
 
 mod cmd;
+mod config;
 mod openocd;
 mod state;
 
@@ -26,7 +27,9 @@ fn main() {
             cmd::get_config_list,
             cmd::start_for_config,
             cmd::start,
-            cmd::kill
+            cmd::kill,
+            cmd::load_state,
+            cmd::dump_state,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

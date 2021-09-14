@@ -11,6 +11,15 @@ pub struct Config {
     pub path: String,
 }
 
+impl ::std::default::Default for Config {
+    fn default() -> Self {
+        Self {
+            name: "".into(),
+            path: "".into(),
+        }
+    }
+}
+
 struct ConfigFileName {
     name: String,
 }
