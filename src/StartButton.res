@@ -1,13 +1,13 @@
 @react.component
 let make = (
   ~item_name: string="config",
-  ~config_items: array<option<BoardList.openocd_config_item>>,
-  ~doStart: array<BoardList.openocd_config_item> => unit,
+  ~config_items: array<option<Openocd.config_t>>,
+  ~doStart: array<Openocd.config_t> => unit,
   ~doStop,
   ~isStarted: bool,
   ~isReady: unit => bool=() => true,
 ) => {
-  let buttonMsg = (board: option<BoardList.openocd_config_item>) => {
+  let buttonMsg = (board: option<Openocd.config_t>) => {
     if isStarted {
       "Stop"
     } else {

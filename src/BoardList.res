@@ -1,24 +1,19 @@
 open MaterialUi_Lab
 
-type openocd_config_item = {
-  name: string,
-  path: string,
-}
-
-// Tricky convert `MaterialUi.Autocomplete.Value.t` to `openocd_config_item`
-external asOcdConfig: Autocomplete.Value.t => openocd_config_item = "%identity"
+// Tricky convert `MaterialUi.Autocomplete.Value.t` to `Openocd.config_t`
+external asOcdConfig: Autocomplete.Value.t => Openocd.config_t = "%identity"
 
 @react.component
 let make = (
   ~selector_name: string,
-  ~items: array<openocd_config_item>,
-  ~onChange: option<openocd_config_item> => unit,
-  ~selected: option<openocd_config_item>,
+  ~items: array<Openocd.config_t>,
+  ~onChange: option<Openocd.config_t> => unit,
+  ~selected: option<Openocd.config_t>,
 ) => {
   open Belt
   open MaterialUi
 
-  let optionRender = (b: openocd_config_item, _) => {
+  let optionRender = (b: Openocd.config_t, _) => {
     <Typography> {b.name} </Typography>
   }
 
@@ -47,7 +42,6 @@ let make = (
       | None => true
       }
     }
-    Js.Console.log(params)
 
     <MaterialUi.TextField
       error
@@ -73,6 +67,9 @@ let make = (
     )
   }
 
+  
+  let selected_name = Belt.Option.mapWithDefault(selected, "Nope", (c) => c.name)
+
   <>
     <Badge
       style={ReactDOM.Style.make(~display="block", ())}
@@ -82,9 +79,9 @@ let make = (
       color=#Primary>
       <Autocomplete
         value={Any(selected)}
-        key=selector_name
-        options={items->Array.map(v => v->Any)}
-        getOptionLabel={item => item.name}
+        key={`${selector_name}-${selected_name}`}
+        options={items->Array.map(v => v->MaterialUi.Any)}
+        getOptionLabel={(item: Openocd.config_t) => item.name}
         renderInput
         onChange=handleChangeItem
         renderOption=optionRender
