@@ -76,32 +76,28 @@ let make = () => {
   }
 
   React.useEffect1(() => {
-    invoke_get_config_list("get_config_list", {configType: "BOARD"})
-    ->then(boards => {
-      setConfigLists(lists => {...lists, boards: boards})
-      resolve()
-    })
-    ->ignore
+    /* Call `invoke_get_config_list` and pass incoming data to `on_receive` cb */
+    let get_list = (config_type: string, on_receive: array<Openocd.config_t> => unit) => {
+      invoke_get_config_list("get_config_list", {configType: config_type})
+      ->then(configs_list => {
+        on_receive(configs_list)
+        resolve()
+      })
+      ->ignore
+    }
 
-    invoke_get_config_list("get_config_list", {configType: "INTERFACE"})
-    ->then(interfaces => {
-      setConfigLists(lists => {...lists, interfaces: interfaces})
-      resolve()
-    })
-    ->ignore
+    // Receive all config lists
+    get_list("BOARD", boards => setConfigLists(lists => {...lists, boards: boards}))
+    get_list("INTERFACE", interfaces => setConfigLists(lists => {...lists, interfaces: interfaces}))
+    get_list("TARGET", targets => setConfigLists(lists => {...lists, targets: targets}))
 
-    invoke_get_config_list("get_config_list", {configType: "TARGET"})
-    ->then(targets => {
-      setConfigLists(lists => {...lists, targets: targets})
-      resolve()
-    })
-    ->ignore
-
+    // Load the last saved configs
     invoke("load_state")
     ->then((conf: Openocd.app_config_t) => {
       Js.Console.log("Load selectors state")
       Js.Console.log(conf)
 
+      /* Turn empty config to option */
       let as_option = (conf: Openocd.config_t) => {
         if conf.name != "" {
           Some(conf)
