@@ -52,6 +52,7 @@ let make = () => {
 
   let (tab_panel_index, setTabPanelIndex) = React.useState(() => 0)
 
+  /* Dump selected configs set to FS */
   let dump_state = (config_set: config_set_t) => {
     let option_to_empty_cfg = (conf: option<Openocd.config_t>) => {
       switch conf {
@@ -157,6 +158,7 @@ let make = () => {
     }
   }
 
+  /* Stop OpenOCD */
   let kill = () => {
     invoke("kill")
     ->then(ret => {
@@ -213,7 +215,7 @@ let make = () => {
     setTabPanelIndex(newValue->MaterialUi_Types.anyUnpack)
   }
 
-  let tab_content = (index: int) => {
+  let render_tab_content = (index: int) => {
     switch index {
     | 0 =>
       <Grid container=true spacing=#V3 alignItems=#Stretch>
@@ -270,8 +272,7 @@ let make = () => {
             doStop=kill
             isStarted=is_started
             isReady={_ => {
-              config_set.target->Belt.Option.isSome &&
-              config_set.interface->Belt.Option.isSome
+              config_set.target->Belt.Option.isSome && config_set.interface->Belt.Option.isSome
             }}
           />
         </Grid>
@@ -280,8 +281,6 @@ let make = () => {
     | _ => <> </>
     }
   }
-
-  let tab_content_resolve = tab_content(tab_panel_index)
 
   <>
     <Grid container=true spacing=#V1 alignItems=#Stretch>
@@ -295,7 +294,7 @@ let make = () => {
       </Grid>
       <Grid item=true xs={Grid.Xs._9}>
         <Card elevation={MaterialUi_Types.Number.int(3)}>
-          <CardContent> tab_content_resolve </CardContent>
+          <CardContent> {render_tab_content(tab_panel_index)} </CardContent>
         </Card>
       </Grid>
       <Grid item=true xs={Grid.Xs._12} />
