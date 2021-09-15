@@ -52,9 +52,7 @@ let make = () => {
 
   let (tab_panel_index, setTabPanelIndex) = React.useState(() => 0)
 
-  let dump_state = (
-    config_set: config_set_t
-  ) => {
+  let dump_state = (config_set: config_set_t) => {
     let option_to_empty_cfg = (conf: option<Openocd.config_t>) => {
       switch conf {
       | Some(c) => c
@@ -80,21 +78,21 @@ let make = () => {
   React.useEffect1(() => {
     invoke_get_config_list("get_config_list", {configType: "BOARD"})
     ->then(boards => {
-      setConfigLists(lists => {...lists, boards})
+      setConfigLists(lists => {...lists, boards: boards})
       resolve()
     })
     ->ignore
 
     invoke_get_config_list("get_config_list", {configType: "INTERFACE"})
     ->then(interfaces => {
-      setConfigLists(lists => {...lists, interfaces})
+      setConfigLists(lists => {...lists, interfaces: interfaces})
       resolve()
     })
     ->ignore
 
     invoke_get_config_list("get_config_list", {configType: "TARGET"})
     ->then(targets => {
-      setConfigLists(lists => {...lists, targets})
+      setConfigLists(lists => {...lists, targets: targets})
       resolve()
     })
     ->ignore
@@ -124,17 +122,39 @@ let make = () => {
     None
   }, [])
 
-  let start = (boards: array<Openocd.config_t>) => {
-    set_openocd_output(_ => "")
+  let start = (~with_interface: bool) => {
+    let unwrap_configs = (configs: array<option<Openocd.config_t>>) => {
+      configs->Belt.Array.reduce([], (arr, el) => {
+        switch el {
+        | Some(el) => Belt.Array.concat(arr, [el])
+        | None => arr
+        }
+      })
+    }
 
-    invoke_start("start", {configs: boards})
-    ->then(ret => {
-      Js.Console.log(`Invoking OpenOCD return: ${ret}`)
-      resolve()
-    })
-    ->ignore
+    let configs = if with_interface {
+      [config_set.interface, config_set.target]->unwrap_configs
+    } else {
+      [config_set.board]->unwrap_configs
+    }
 
-    set_is_started(_ => true)
+    if Belt.Array.length(configs) > 0 {
+      set_openocd_output(_ => "")
+
+      invoke_start(
+        "start",
+        {
+          configs: configs,
+        },
+      )
+      ->then(ret => {
+        Js.Console.log(`Invoking OpenOCD return: ${ret}`)
+        resolve()
+      })
+      ->ignore
+
+      set_is_started(_ => true)
+    }
   }
 
   let kill = () => {
@@ -202,22 +222,19 @@ let make = () => {
             selector_name="board"
             items=config_lists.boards
             onChange={board => {
-              setConfigSet(config => {...config, board})
-              dump_state({...config_set, board})
+              setConfigSet(config => {...config, board: board})
+              dump_state({...config_set, board: board})
             }}
             selected=config_set.board
           />
         </Grid>
         <Grid item=true xs={Grid.Xs._12}>
-          <StartButton
-            item_name="board"
-            configs=[config_set.board]
-            doStart=start
+          <StartStopButton
+            itemName="board"
+            doStart={() => start(~with_interface=false)}
             doStop=kill
             isStarted=is_started
-            isReady={_ => {
-              !(config_set.board->Belt.Option.isNone)
-            }}
+            isReady={() => config_set.board->Belt.Option.isSome}
           />
         </Grid>
       </Grid>
@@ -229,9 +246,8 @@ let make = () => {
             selector_name="interface"
             items=config_lists.interfaces
             onChange={interface => {
-              setConfigSet(config => {...config, interface})
-              dump_state({...config_set, interface})
-              
+              setConfigSet(config => {...config, interface: interface})
+              dump_state({...config_set, interface: interface})
             }}
             selected=config_set.interface
           />
@@ -241,22 +257,21 @@ let make = () => {
             selector_name="target"
             items=config_lists.targets
             onChange={target => {
-              setConfigSet(config => {...config, target})
-              dump_state({...config_set, target})
+              setConfigSet(config => {...config, target: target})
+              dump_state({...config_set, target: target})
             }}
             selected=config_set.target
           />
         </Grid>
         <Grid item=true xs={Grid.Xs._12}>
-          <StartButton
-            item_name="target with interface"
-            configs=[config_set.interface, config_set.target]
-            doStart=start
+          <StartStopButton
+            itemName="target with interface"
+            doStart={() => start(~with_interface=true)}
             doStop=kill
             isStarted=is_started
             isReady={_ => {
-              !(config_set.target->Belt.Option.isNone) &&
-              !(config_set.interface->Belt.Option.isNone)
+              config_set.target->Belt.Option.isSome &&
+              config_set.interface->Belt.Option.isSome
             }}
           />
         </Grid>
