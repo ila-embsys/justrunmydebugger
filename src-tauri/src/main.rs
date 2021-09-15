@@ -23,9 +23,7 @@ fn main() {
         })
         // This is where you pass in your commands
         .invoke_handler(tauri::generate_handler![
-            cmd::get_board_list,
             cmd::get_config_list,
-            cmd::start_for_config,
             cmd::start,
             cmd::kill,
             cmd::load_state,
