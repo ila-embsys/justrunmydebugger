@@ -14,25 +14,6 @@ struct Payload {
     message: String,
 }
 
-/// Return a list of `Config` of board configs
-///
-/// Same as `get_config_list` but return only one type of configs.
-/// Return empty list if configs was not found.
-///
-#[tauri::command]
-#[deprecated(note = r#"Use `get_config_list` cmd with "BOARD" argument instead."#)]
-pub fn get_board_list() -> Vec<Config> {
-    let empty = Vec::<Config>::new();
-
-    if openocd::is_available() {
-        let boards = get_configs(ConfigType::BOARD);
-        boards.map_or(empty, |boards| boards)
-    } else {
-        warn!("OpenOCD not found!");
-        empty
-    }
-}
-
 /// Returns a list of `Config` of selected type
 ///
 /// Read cfg files in the script folder of OpenOCD and return them
@@ -89,15 +70,6 @@ pub fn kill(state: tauri::State<State>) -> String {
         Some(err) => err.into(),
         None => "".into(),
     }
-}
-
-/// Same as `start` but only for one config as OpenOCD argument
-///
-/// See `start` docs.
-#[tauri::command]
-#[deprecated(note = "Use `start` cmd with `vec![config]` argument instead.")]
-pub fn start_for_config(config: Config, state: tauri::State<State>, window: Window) -> String {
-    start(vec![config], state, window)
 }
 
 /// Start openocd as process with provided configs as args
