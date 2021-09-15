@@ -122,29 +122,33 @@ let make = () => {
     None
   }, [])
 
+  /* Start OpenOCD process on backend with selected configs */
   let start = (~with_interface: bool) => {
+    open Belt_Array
+    open Belt_Option
+
     let unwrap_configs = (configs: array<option<Openocd.config_t>>) => {
-      configs->Belt.Array.reduce([], (arr, el) => {
+      configs->reduce([], (arr, el) => {
         switch el {
-        | Some(el) => Belt.Array.concat(arr, [el])
+        | Some(el) => concat(arr, [el])
         | None => arr
         }
       })
     }
 
     let configs = if with_interface {
-      [config_set.interface, config_set.target]->unwrap_configs
+      [config_set.interface, config_set.target]
     } else {
-      [config_set.board]->unwrap_configs
+      [config_set.board]
     }
 
-    if Belt.Array.length(configs) > 0 {
+    if configs->every(c => c->isSome) {
       set_openocd_output(_ => "")
 
       invoke_start(
         "start",
         {
-          configs: configs,
+          configs: configs->unwrap_configs,
         },
       )
       ->then(ret => {
