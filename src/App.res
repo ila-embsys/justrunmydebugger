@@ -1,28 +1,28 @@
-type config = {configs: array<BoardList.openocd_config_item>}
+type configs = {configs: array<Openocd.config_t>}
 type config_type = {configType: string}
-
-type selectedBoardName = option<string>
-
 type payload = {message: string}
 type event = {event_name: string, payload: payload}
 type eventCallBack = event => unit
+type dump_state_t = {dumped: Openocd.app_config_t}
 
 @module("@tauri-apps/api/tauri") external invoke: string => Promise.t<'data> = "invoke"
 @module("@tauri-apps/api/tauri")
-external invoke_start: (string, config) => Promise.t<'data> = "invoke"
+external invoke_start: (string, configs) => Promise.t<'data> = "invoke"
 @module("@tauri-apps/api/tauri")
 external invoke_get_config_list: (string, config_type) => Promise.t<'data> = "invoke"
 @module("@tauri-apps/api/event")
 external listen: (~event_name: string, ~callback: eventCallBack) => Promise.t<'event> = "listen"
+@module("@tauri-apps/api/tauri")
+external invoke_dump_state: (string, dump_state_t) => Promise.t<'data> = "invoke"
 
 @react.component
 let make = () => {
   open Promise
   open MaterialUi
 
-  let default_boards: array<BoardList.openocd_config_item> = []
-  let default_interfaces: array<BoardList.openocd_config_item> = []
-  let default_targets: array<BoardList.openocd_config_item> = []
+  let default_boards: array<Openocd.config_t> = []
+  let default_interfaces: array<Openocd.config_t> = []
+  let default_targets: array<Openocd.config_t> = []
 
   let default_openocd_unlisten: option<unit => unit> = None
 
@@ -30,24 +30,44 @@ let make = () => {
   let (interfaces, setInterfaces) = React.useState(() => default_interfaces)
   let (targets, setTargets) = React.useState(() => default_targets)
 
-  let (
-    selected_board: option<BoardList.openocd_config_item>,
-    setSelectedBoard,
-  ) = React.useState(() => None)
-  let (
-    selected_interface: option<BoardList.openocd_config_item>,
-    setSelectedInterface,
-  ) = React.useState(() => None)
-  let (
-    selected_target: option<BoardList.openocd_config_item>,
-    setSelectedTarget,
-  ) = React.useState(() => None)
+  let (selected_board: option<Openocd.config_t>, setSelectedBoard) = React.useState(() => None)
+  let (selected_interface: option<Openocd.config_t>, setSelectedInterface) = React.useState(() =>
+    None
+  )
+  let (selected_target: option<Openocd.config_t>, setSelectedTarget) = React.useState(() => None)
 
   let (openocd_output, set_openocd_output) = React.useState(() => "")
   let (is_started, set_is_started) = React.useState(() => false)
   let (openocd_unlisten, set_openocd_unlisten) = React.useState(() => default_openocd_unlisten)
 
   let (tab_panel_index, setTabPanelIndex) = React.useState(() => 0)
+
+  let dump_state = (
+    ~board: option<Openocd.config_t>,
+    ~interface: option<Openocd.config_t>,
+    ~target: option<Openocd.config_t>,
+  ) => {
+    let option_to_empty_cfg = (conf: option<Openocd.config_t>) => {
+      switch conf {
+      | Some(c) => c
+      | None => {name: "", path: ""}
+      }
+    }
+
+    let conf_to_save: Openocd.app_config_t = {
+      board: board->option_to_empty_cfg,
+      interface: interface->option_to_empty_cfg,
+      target: target->option_to_empty_cfg,
+    }
+
+    invoke_dump_state("dump_state", {dumped: conf_to_save})
+    ->then(_ => {
+      Js.Console.log("Dump selectors state")
+      Js.Console.log(conf_to_save)
+      resolve()
+    })
+    ->ignore
+  }
 
   React.useEffect1(() => {
     invoke_get_config_list("get_config_list", {configType: "BOARD"})
@@ -82,7 +102,7 @@ let make = () => {
     None
   }, [])
 
-  let start = (boards: array<BoardList.openocd_config_item>) => {
+  let start = (boards: array<Openocd.config_t>) => {
     set_openocd_output(_ => "")
 
     invoke_start("start", {configs: boards})
@@ -105,6 +125,30 @@ let make = () => {
 
     set_is_started(_ => false)
   }
+
+  React.useEffect1(() => {
+    invoke("load_state")
+    ->then((conf: Openocd.app_config_t) => {
+      Js.Console.log("Load selectors state")
+      Js.Console.log(conf)
+
+      let get_option_conf = (conf: Openocd.config_t) => {
+        if conf.name != "" {
+          Some(conf)
+        } else {
+          None
+        }
+      }
+
+      setSelectedBoard(_ => {get_option_conf(conf.board)})
+      setSelectedInterface(_ => {get_option_conf(conf.interface)})
+      setSelectedTarget(_ => {get_option_conf(conf.target)})
+      resolve()
+    })
+    ->ignore
+
+    None
+  }, [])
 
   React.useEffect1(() => {
     if openocd_unlisten->Belt.Option.isNone {
@@ -159,7 +203,10 @@ let make = () => {
           <BoardList
             selector_name="board"
             items=boards
-            onChange={board => setSelectedBoard(_ => board)}
+            onChange={board => {
+              setSelectedBoard(_ => board)
+              dump_state(~board, ~interface=selected_interface, ~target=selected_target)
+            }}
             selected=selected_board
           />
         </Grid>
@@ -183,7 +230,10 @@ let make = () => {
           <BoardList
             selector_name="interface"
             items=interfaces
-            onChange={interface => setSelectedInterface(_ => interface)}
+            onChange={interface => {
+              setSelectedInterface(_ => interface)
+              dump_state(~board=selected_board, ~interface, ~target=selected_target)
+            }}
             selected=selected_interface
           />
         </Grid>
@@ -191,7 +241,10 @@ let make = () => {
           <BoardList
             selector_name="target"
             items=targets
-            onChange={target => setSelectedTarget(_ => target)}
+            onChange={target => {
+              setSelectedTarget(_ => target)
+              dump_state(~board=selected_board, ~interface=selected_interface, ~target)
+            }}
             selected=selected_target
           />
         </Grid>
