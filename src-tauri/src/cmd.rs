@@ -1,11 +1,10 @@
 use log::{error, info, warn};
 use std::io::{BufRead, BufReader};
-use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 use tauri::Window;
 
 use crate::config::AppConfig;
-use crate::openocd::config::{get_configs, Config, ConfigType};
+use crate::openocd::config::{Config, ConfigsSet};
 use crate::openocd::proc as openocd;
 use crate::state::State;
 
@@ -14,35 +13,20 @@ struct Payload {
     message: String,
 }
 
-/// Returns a list of `Config` of selected type
+#[derive(Clone, serde::Serialize)]
+pub struct ErrorMsg {
+    pub message: String,
+}
+
+/// Return a struct with three lists of `Config`
 ///
 /// Read cfg files in the script folder of OpenOCD and return them
-/// as list of `Config { name, path }`. Return empty vector if configs
-/// was not found.
-///
-/// # Arguments
-///
-/// * `config_type` - A string with possible values: BOARD, INTERFACE, TARGET
+/// as three list of `Config { name, path }`: boards, interfaces and targets.
+/// Return empty vector if configs was not found.
 ///
 #[tauri::command]
-pub fn get_config_list(config_type: String) -> Vec<Config> {
-    let empty = Vec::<Config>::new();
-
-    if openocd::is_available() {
-        match ConfigType::from_str(config_type.as_str()) {
-            Ok(board_type) => {
-                let boards = get_configs(board_type);
-                boards.map_or(empty, |boards| boards)
-            }
-            Err(_) => {
-                error!("Bad config type!");
-                empty
-            }
-        }
-    } else {
-        warn!("OpenOCD not found!");
-        empty
-    }
+pub fn get_config_lists() -> Result<ConfigsSet, ErrorMsg> {
+    ConfigsSet::new().map_err(|s| ErrorMsg { message: s })
 }
 
 /// Kill started OpenOCD process if it was started
@@ -151,7 +135,7 @@ pub fn start(configs: Vec<Config>, state: tauri::State<State>, window: Window) -
 }
 
 /// Dump selected fields with configs in GUI
-/// 
+///
 /// Return string with status.
 ///
 #[tauri::command]
@@ -165,7 +149,7 @@ pub fn dump_state(dumped: AppConfig) -> String {
 }
 
 /// Return previously dumped fields with configs
-/// 
+///
 /// Configs contain empty name/path if their was not previously dumped.
 ///
 #[tauri::command]
