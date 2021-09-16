@@ -1,31 +1,10 @@
-type configs = {configs: array<Openocd.config_t>}
-type config_type = {configType: string}
-type payload = {message: string}
-type event = {event_name: string, payload: payload}
-type eventCallBack = event => unit
-type dump_state_t = {dumped: Openocd.app_config_t}
+open Api
 
 type config_set_t = {
   board: option<Openocd.config_t>,
   interface: option<Openocd.config_t>,
   target: option<Openocd.config_t>,
 }
-
-type config_lists_t = {
-  boards: array<Openocd.config_t>,
-  interfaces: array<Openocd.config_t>,
-  targets: array<Openocd.config_t>,
-}
-
-@module("@tauri-apps/api/tauri") external invoke: string => Promise.t<'data> = "invoke"
-@module("@tauri-apps/api/tauri")
-external invoke_start: (string, configs) => Promise.t<'data> = "invoke"
-@module("@tauri-apps/api/tauri")
-external invoke_get_config_list: (string, config_type) => Promise.t<'data> = "invoke"
-@module("@tauri-apps/api/event")
-external listen: (~event_name: string, ~callback: eventCallBack) => Promise.t<'event> = "listen"
-@module("@tauri-apps/api/tauri")
-external invoke_dump_state: (string, dump_state_t) => Promise.t<'data> = "invoke"
 
 @react.component
 let make = () => {
@@ -67,7 +46,7 @@ let make = () => {
       target: config_set.target->option_to_empty_cfg,
     }
 
-    invoke_dump_state("dump_state", {dumped: conf_to_save})
+    invoke_dump_state({dumped: conf_to_save})
     ->then(_ => {
       Js.Console.log("Dump selectors state")
       Js.Console.log(conf_to_save)
@@ -77,23 +56,19 @@ let make = () => {
   }
 
   React.useEffect1(() => {
-    /* Call `invoke_get_config_list` and pass incoming data to `on_receive` cb */
-    let get_list = (config_type: string, on_receive: array<Openocd.config_t> => unit) => {
-      invoke_get_config_list("get_config_list", {configType: config_type})
-      ->then(configs_list => {
-        on_receive(configs_list)
-        resolve()
-      })
-      ->ignore
-    }
-
-    // Receive all config lists
-    get_list("BOARD", boards => setConfigLists(lists => {...lists, boards: boards}))
-    get_list("INTERFACE", interfaces => setConfigLists(lists => {...lists, interfaces: interfaces}))
-    get_list("TARGET", targets => setConfigLists(lists => {...lists, targets: targets}))
+    invoke_get_config_lists()
+    ->then(lists => {
+      setConfigLists(_ => lists)
+      resolve()
+    })
+    ->catch(err => {
+      Js.Console.error(Api.promise_error_msg(err))
+      resolve()
+    })
+    ->ignore
 
     // Load the last saved configs
-    invoke("load_state")
+    invoke_load_state()
     ->then((conf: Openocd.app_config_t) => {
       Js.Console.log("Load selectors state")
       Js.Console.log(conf)
@@ -142,12 +117,9 @@ let make = () => {
     if configs->every(c => c->isSome) {
       set_openocd_output(_ => "")
 
-      invoke_start(
-        "start",
-        {
-          configs: configs->unwrap_configs,
-        },
-      )
+      invoke_start({
+        configs: configs->unwrap_configs,
+      })
       ->then(ret => {
         Js.Console.log(`Invoking OpenOCD return: ${ret}`)
         resolve()
@@ -160,7 +132,7 @@ let make = () => {
 
   /* Stop OpenOCD */
   let kill = () => {
-    invoke("kill")
+    invoke_kill()
     ->then(ret => {
       Js.Console.log(`Killing OpenOCD return: ${ret}`)
       resolve()
@@ -174,7 +146,7 @@ let make = () => {
     if openocd_unlisten->Belt.Option.isNone {
       Js.Console.log(`Listener state: ${Js.String.make(is_started)}`)
 
-      listen(~event_name="openocd-output", ~callback=e => {
+      Tauri.listen(~event_name="openocd-output", ~callback=e => {
         Js.Console.log(`Call listener`)
         let payload = e.payload
         let message = payload.message
