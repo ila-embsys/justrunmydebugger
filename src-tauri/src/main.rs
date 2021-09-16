@@ -23,11 +23,11 @@ fn main() {
         })
         // This is where you pass in your commands
         .invoke_handler(tauri::generate_handler![
-            cmd::get_config_list,
             cmd::start,
             cmd::kill,
             cmd::load_state,
             cmd::dump_state,
+            cmd::get_config_lists,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

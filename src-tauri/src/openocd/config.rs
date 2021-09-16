@@ -2,7 +2,6 @@ use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
 use std::option::Option;
 use std::path::{Path, PathBuf};
-use strum_macros::EnumString;
 use walkdir::WalkDir;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -22,14 +21,6 @@ impl ::std::default::Default for Config {
 
 struct ConfigFileName {
     name: String,
-}
-
-#[derive(EnumString)]
-#[allow(clippy::upper_case_acronyms)]
-pub enum ConfigType {
-    BOARD,
-    INTERFACE,
-    TARGET,
 }
 
 impl TryFrom<&Path> for ConfigFileName {
@@ -61,20 +52,6 @@ impl TryFrom<&Path> for ConfigFileName {
             });
 
         config_file.ok_or(())
-    }
-}
-
-pub fn get_configs(config_type: ConfigType) -> Option<Vec<Config>> {
-    if let Some(openocd_path) = root_path() {
-        let path = match config_type {
-            ConfigType::BOARD => board_path(openocd_path),
-            ConfigType::INTERFACE => interface_path(openocd_path),
-            ConfigType::TARGET => target_path(openocd_path),
-        };
-
-        extract_configs_from(path.as_path())
-    } else {
-        None
     }
 }
 
@@ -135,18 +112,44 @@ pub fn root_path() -> Option<PathBuf> {
     }
 }
 
-pub fn scripts_path(openocd_path: PathBuf) -> PathBuf {
+pub fn scripts_path(openocd_path: &Path) -> PathBuf {
     openocd_path.join("scripts")
 }
 
-pub fn board_path(openocd_path: PathBuf) -> PathBuf {
+pub fn board_path(openocd_path: &Path) -> PathBuf {
     scripts_path(openocd_path).join("board")
 }
 
-pub fn interface_path(openocd_path: PathBuf) -> PathBuf {
+pub fn interface_path(openocd_path: &Path) -> PathBuf {
     scripts_path(openocd_path).join("interface")
 }
 
-pub fn target_path(openocd_path: PathBuf) -> PathBuf {
+pub fn target_path(openocd_path: &Path) -> PathBuf {
     scripts_path(openocd_path).join("target")
+}
+
+#[derive(Serialize)]
+pub struct ConfigsSet {
+    boards: Vec<Config>,
+    interfaces: Vec<Config>,
+    targets: Vec<Config>,
+}
+
+impl ConfigsSet {
+    pub fn new() -> Result<ConfigsSet, String> {
+        let root = root_path();
+        if let Some(root) = root {
+            Ok(ConfigsSet {
+                boards: ConfigsSet::extract_configs(board_path(&root).as_path()),
+                interfaces: ConfigsSet::extract_configs(interface_path(&root).as_path()),
+                targets: ConfigsSet::extract_configs(target_path(&root).as_path()),
+            })
+        } else {
+            Err("OpenOCD not found!".into())
+        }
+    }
+
+    fn extract_configs(path: &Path) -> Vec<Config> {
+        extract_configs_from(path).map_or(Vec::<Config>::new(), |cfgs| cfgs)
+    }
 }
