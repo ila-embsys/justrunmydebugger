@@ -40,9 +40,11 @@ module ReactHooks = {
   open Promise
   open Belt_Option
 
+  /// Subscribe to event and call user callback if event is received
   let useListen = (event: string, ~callback: Tauri.event => unit) => {
     let (unlisten: option<unit => unit>, setUnlisten) = React.useState(() => None)
 
+    /* Effect: subscribe to event. Call `unsubscribe` on cleanup. */
     React.useEffect1(() => {
       if unlisten->isNone {
         Tauri.listen(~event_name=event, ~callback)
