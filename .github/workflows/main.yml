@@ -84,4 +84,4 @@ jobs:
         with:
           name: bundle-dev
           path: |
-            src-tauri/target/prod/bundle
+            src-tauri/target/release/bundle
