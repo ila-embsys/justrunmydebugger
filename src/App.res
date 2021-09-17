@@ -41,7 +41,7 @@ let make = () => {
     open Belt_Array
     open Belt_Option
 
-    /* Convert array<option<'a>> to array<'a> with a None removing */
+    /* Convert array<option<'a>> to array<'a> with None elements removed */
     let unwrap_opt_array = (array: array<option<'a>>) => {
       array->reduce([], (arr, el) => {
         switch el {
