@@ -48,9 +48,9 @@ jobs:
                       libappindicator3-dev \
                       patchelf \
                       librsvg2-dev \
-                      libappindicator \
+                      libappindicator-dev \
                       patchelf \
-                      librsvg
+                      librsvg2-dev
                elif [ "$RUNNER_OS" == "Windows" ]; then
                     echo "No need additional Tauri dependencies for $RUNNER_OS"
                     exit 0
