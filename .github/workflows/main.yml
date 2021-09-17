@@ -51,6 +51,10 @@ jobs:
                       libappindicator \
                       patchelf \
                       librsvg
+               else
+                    echo "$RUNNER_OS not supported"
+                    exit 1
+               fi
         shell: bash
 
       - name: Fetch dependencies
