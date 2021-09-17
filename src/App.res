@@ -7,9 +7,11 @@ type config_set_t = {
 }
 
 module Hooks = {
-  /// Subscribe to `` and return OpenOCD output as string
+  /// Subscribe to `openocd-output` and return OpenOCD output as string
   ///
-  /// Also return a setter to force set internal state.
+  /// Returns:
+  ///   output: output of OpenOCD
+  ///   setOutput: setter to force set internal state
   ///
   let useOpenocdOutput = (): (string, string => unit) => {
     let (output: string, setOutput) = React.useState(() => "")
@@ -42,6 +44,80 @@ module Hooks = {
 
     (output, string => {setOutput(_ => string)})
   }
+
+  /// Load state the last saved app state, dump state, update state
+  ///
+  /// Store and provide access to config_set (set of current selected configs).
+  /// Returns:
+  ///   appState: config set
+  ///   setAppState: setter for config set
+  ///
+  let useAppState = (): (config_set_t, config_set_t => unit) => {
+    open Promise
+
+    /* App state (config set) */
+    let (config_set: config_set_t, setConfigSet) = React.useState(() => {
+      board: None,
+      interface: None,
+      target: None,
+    })
+
+    /* Dump an app state (config set) */
+    let dump_state = (config_set: config_set_t) => {
+      setConfigSet(_ => config_set)
+
+      let option_to_empty_cfg = (conf: option<Openocd.config_t>) => {
+        switch conf {
+        | Some(c) => c
+        | None => {name: "", path: ""}
+        }
+      }
+
+      let conf_to_save: Openocd.app_config_t = {
+        board: config_set.board->option_to_empty_cfg,
+        interface: config_set.interface->option_to_empty_cfg,
+        target: config_set.target->option_to_empty_cfg,
+      }
+
+      invoke_dump_state({dumped: conf_to_save})
+      ->then(_ => {
+        Js.Console.log("Dump selectors state")
+        Js.Console.log(conf_to_save)
+        resolve()
+      })
+      ->ignore
+    }
+
+    /* Effect: load the last saved configs once */
+    React.useEffect1(() => {
+      invoke_load_state()
+      ->then((conf: Openocd.app_config_t) => {
+        Js.Console.log("Load selectors state")
+        Js.Console.log(conf)
+
+        /* Turn empty config to option */
+        let as_option = (conf: Openocd.config_t) => {
+          if conf.name != "" {
+            Some(conf)
+          } else {
+            None
+          }
+        }
+
+        setConfigSet(_ => {
+          board: conf.board->as_option,
+          interface: conf.interface->as_option,
+          target: conf.target->as_option,
+        })
+        resolve()
+      })
+      ->ignore
+
+      None
+    }, [])
+
+    (config_set, dump_state)
+  }
 }
 
 @react.component
@@ -49,11 +125,7 @@ let make = () => {
   open Promise
   open MaterialUi
 
-  let (config_set: config_set_t, setConfigSet) = React.useState(() => {
-    board: None,
-    interface: None,
-    target: None,
-  })
+  let (appState, setAppState) = Hooks.useAppState()
 
   let (config_lists: config_lists_t, setConfigLists) = React.useState(() => {
     boards: [],
@@ -67,30 +139,6 @@ let make = () => {
 
   let (openocd_output, set_openocd_output) = Hooks.useOpenocdOutput()
 
-  /* Dump selected configs set to FS */
-  let dump_state = (config_set: config_set_t) => {
-    let option_to_empty_cfg = (conf: option<Openocd.config_t>) => {
-      switch conf {
-      | Some(c) => c
-      | None => {name: "", path: ""}
-      }
-    }
-
-    let conf_to_save: Openocd.app_config_t = {
-      board: config_set.board->option_to_empty_cfg,
-      interface: config_set.interface->option_to_empty_cfg,
-      target: config_set.target->option_to_empty_cfg,
-    }
-
-    invoke_dump_state({dumped: conf_to_save})
-    ->then(_ => {
-      Js.Console.log("Dump selectors state")
-      Js.Console.log(conf_to_save)
-      resolve()
-    })
-    ->ignore
-  }
-
   React.useEffect1(() => {
     invoke_get_config_lists()
     ->then(lists => {
@@ -102,31 +150,6 @@ let make = () => {
       resolve()
     })
     ->ignore
-
-    // Load the last saved configs
-    invoke_load_state()
-    ->then((conf: Openocd.app_config_t) => {
-      Js.Console.log("Load selectors state")
-      Js.Console.log(conf)
-
-      /* Turn empty config to option */
-      let as_option = (conf: Openocd.config_t) => {
-        if conf.name != "" {
-          Some(conf)
-        } else {
-          None
-        }
-      }
-
-      setConfigSet(_ => {
-        board: conf.board->as_option,
-        interface: conf.interface->as_option,
-        target: conf.target->as_option,
-      })
-      resolve()
-    })
-    ->ignore
-
     None
   }, [])
 
@@ -145,9 +168,9 @@ let make = () => {
     }
 
     let configs = if with_interface {
-      [config_set.interface, config_set.target]
+      [appState.interface, appState.target]
     } else {
-      [config_set.board]
+      [appState.board]
     }
 
     if configs->every(c => c->isSome) {
@@ -191,10 +214,9 @@ let make = () => {
             selector_name="board"
             items=config_lists.boards
             onChange={board => {
-              setConfigSet(config => {...config, board: board})
-              dump_state({...config_set, board: board})
+              setAppState({...appState, board: board})
             }}
-            selected=config_set.board
+            selected=appState.board
           />
         </Grid>
         <Grid item=true xs={Grid.Xs._12}>
@@ -203,7 +225,7 @@ let make = () => {
             doStart={() => start(~with_interface=false)}
             doStop=kill
             isStarted=is_started
-            isReady={() => config_set.board->Belt.Option.isSome}
+            isReady={() => appState.board->Belt.Option.isSome}
           />
         </Grid>
       </Grid>
@@ -215,10 +237,9 @@ let make = () => {
             selector_name="interface"
             items=config_lists.interfaces
             onChange={interface => {
-              setConfigSet(config => {...config, interface: interface})
-              dump_state({...config_set, interface: interface})
+              setAppState({...appState, interface: interface})
             }}
-            selected=config_set.interface
+            selected=appState.interface
           />
         </Grid>
         <Grid item=true xs={Grid.Xs._6}>
@@ -226,10 +247,9 @@ let make = () => {
             selector_name="target"
             items=config_lists.targets
             onChange={target => {
-              setConfigSet(config => {...config, target: target})
-              dump_state({...config_set, target: target})
+              setAppState({...appState, target: target})
             }}
-            selected=config_set.target
+            selected=appState.target
           />
         </Grid>
         <Grid item=true xs={Grid.Xs._12}>
@@ -239,7 +259,7 @@ let make = () => {
             doStop=kill
             isStarted=is_started
             isReady={_ => {
-              config_set.target->Belt.Option.isSome && config_set.interface->Belt.Option.isSome
+              appState.target->Belt.Option.isSome && appState.interface->Belt.Option.isSome
             }}
           />
         </Grid>
