@@ -35,6 +35,23 @@ jobs:
           
       - name: Install Yarn
         run: npm install -g yarn
+        
+      - name:  Install system dependencies for Tari 
+        run:   |
+               if [ "$RUNNER_OS" == "Linux" ]; then
+                    apt install libwebkit2gtk-4.0-dev \
+                      build-essential \
+                      curl \
+                      wget \
+                      libssl-dev \
+                      libgtk-3-dev \
+                      libappindicator3-dev \
+                      patchelf \
+                      librsvg2-dev \
+                      libappindicator \
+                      patchelf \
+                      librsvg
+        shell: bash
 
       - name: Fetch dependencies
         run: yarn install # will run `yarn install` command
