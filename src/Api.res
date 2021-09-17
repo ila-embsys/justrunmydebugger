@@ -35,3 +35,25 @@ let promise_error_msg = (error: 'a): string => {
   | _ => `Some unknown error: ${error_stringified}`
   }
 }
+
+module ReactHooks = {
+  open Promise
+  open Belt_Option
+
+  let useListen = (event: string, ~callback: Tauri.event => unit) => {
+    let (unlisten: option<unit => unit>, setUnlisten) = React.useState(() => None)
+
+    React.useEffect1(() => {
+      if unlisten->isNone {
+        Tauri.listen(~event_name=event, ~callback)
+        ->then(unlisten => {
+          setUnlisten(_ => unlisten)
+          resolve()
+        })
+        ->ignore
+      }
+
+      unlisten
+    }, [unlisten])
+  }
+}

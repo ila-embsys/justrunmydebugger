@@ -6,12 +6,48 @@ type config_set_t = {
   target: option<Openocd.config_t>,
 }
 
+module Hooks = {
+  /// Subscribe to `` and return OpenOCD output as string
+  ///
+  /// Also return a setter to force set internal state.
+  ///
+  let useOpenocdOutput = (): (string, string => unit) => {
+    let (output: string, setOutput) = React.useState(() => "")
+
+    /* Cut and append OpenOCD output to state by `openocd-output` event */
+    let openocd_output_cb = (e: Tauri.event) => {
+      let message = e.payload.message
+
+      let rec text_cuter = (text: string, length: int) => {
+        if text->Js.String2.length > length {
+          let second_line_position = text->Js.String2.indexOf("\n") + 1
+
+          if second_line_position == -1 {
+            text
+          } else {
+            let substring = text->Js.String2.substr(~from=second_line_position)
+            text_cuter(substring, length)
+          }
+        } else {
+          text
+        }
+      }
+
+      setOutput(output => {
+        (output ++ message)->text_cuter(5000)
+      })
+    }
+
+    Api.ReactHooks.useListen("openocd-output", ~callback=openocd_output_cb)
+
+    (output, string => {setOutput(_ => string)})
+  }
+}
+
 @react.component
 let make = () => {
   open Promise
   open MaterialUi
-
-  let default_openocd_unlisten: option<unit => unit> = None
 
   let (config_set: config_set_t, setConfigSet) = React.useState(() => {
     board: None,
@@ -25,11 +61,11 @@ let make = () => {
     targets: [],
   })
 
-  let (openocd_output, set_openocd_output) = React.useState(() => "")
   let (is_started, set_is_started) = React.useState(() => false)
-  let (openocd_unlisten, set_openocd_unlisten) = React.useState(() => default_openocd_unlisten)
 
   let (tab_panel_index, setTabPanelIndex) = React.useState(() => 0)
+
+  let (openocd_output, set_openocd_output) = Hooks.useOpenocdOutput()
 
   /* Dump selected configs set to FS */
   let dump_state = (config_set: config_set_t) => {
@@ -115,7 +151,7 @@ let make = () => {
     }
 
     if configs->every(c => c->isSome) {
-      set_openocd_output(_ => "")
+      set_openocd_output("")
 
       invoke_start({
         configs: configs->unwrap_configs,
@@ -141,47 +177,6 @@ let make = () => {
 
     set_is_started(_ => false)
   }
-
-  React.useEffect1(() => {
-    if openocd_unlisten->Belt.Option.isNone {
-      Js.Console.log(`Listener state: ${Js.String.make(is_started)}`)
-
-      Tauri.listen(~event_name="openocd-output", ~callback=e => {
-        Js.Console.log(`Call listener`)
-        let payload = e.payload
-        let message = payload.message
-
-        Js.Console.log(`payload: ${message}`)
-
-        let rec text_cuter = (text: string, length: int) => {
-          if text->Js.String.length > length {
-            let second_line_position = text->Js.String2.indexOf("\n") + 1
-
-            if second_line_position == -1 {
-              text
-            } else {
-              let substring = text->Js.String2.substr(~from=second_line_position)
-              text_cuter(substring, length)
-            }
-          } else {
-            text
-          }
-        }
-
-        set_openocd_output(output => {
-          (output ++ message)->text_cuter(5000)
-        })
-      })
-      ->then(unlisten => {
-        set_openocd_unlisten(_ => Some(unlisten))
-        Js.Console.log(`Set listener`)
-
-        resolve()
-      })
-      ->ignore
-    }
-    None
-  }, [])
 
   let handleTabPanelChange = (_, newValue: MaterialUi_Types.any) => {
     setTabPanelIndex(newValue->MaterialUi_Types.anyUnpack)
