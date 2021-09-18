@@ -44,8 +44,10 @@ module ReactHooks = {
   let useListen = (event: string, ~callback: Tauri.event => unit) => {
     let (unlisten: option<unit => unit>, setUnlisten) = React.useState(() => None)
 
+    let cb = React.useCallback1(callback, [])
+
     /* Effect: subscribe to event. Call `unsubscribe` on cleanup. */
-    React.useEffect1(() => {
+    React.useEffect3(() => {
       if unlisten->isNone {
         Tauri.listen(~event_name=event, ~callback)
         ->then(unlisten => {
@@ -56,6 +58,6 @@ module ReactHooks = {
       }
 
       unlisten
-    }, [unlisten])
+    }, (unlisten, event, cb))
   }
 }
