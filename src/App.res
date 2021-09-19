@@ -7,7 +7,7 @@ let make = () => {
   open Promise
   open MaterialUi
 
-  let (appState, setAppState) = useAppState()
+  let (dumpedState, setDumpedState) = useDumpedState()
   let config_lists = useConfigLists()
 
   let (is_started, set_is_started) = React.useState(() => false)
@@ -32,9 +32,9 @@ let make = () => {
     }
 
     let configs = if with_interface {
-      [appState.interface, appState.target]
+      [dumpedState.interface, dumpedState.target]
     } else {
-      [appState.board]
+      [dumpedState.board]
     }
 
     if configs->every(c => c->isSome) {
@@ -80,9 +80,9 @@ let make = () => {
             selector_name="board"
             items=config_lists.boards
             onChange={board => {
-              setAppState({...appState, board: board})
+              setDumpedState({...dumpedState, board: board})
             }}
-            selected=appState.board
+            selected=dumpedState.board
           />
         </Grid>
         <Grid item=true xs={Grid.Xs._12}>
@@ -91,7 +91,7 @@ let make = () => {
             doStart={() => start(~with_interface=false)}
             doStop=kill
             isStarted=is_started
-            isReady={() => appState.board->Belt.Option.isSome}
+            isReady={() => dumpedState.board->Belt.Option.isSome}
           />
         </Grid>
       </Grid>
@@ -103,9 +103,9 @@ let make = () => {
             selector_name="interface"
             items=config_lists.interfaces
             onChange={interface => {
-              setAppState({...appState, interface: interface})
+              setDumpedState({...dumpedState, interface: interface})
             }}
-            selected=appState.interface
+            selected=dumpedState.interface
           />
         </Grid>
         <Grid item=true xs={Grid.Xs._6}>
@@ -113,9 +113,9 @@ let make = () => {
             selector_name="target"
             items=config_lists.targets
             onChange={target => {
-              setAppState({...appState, target: target})
+              setDumpedState({...dumpedState, target: target})
             }}
-            selected=appState.target
+            selected=dumpedState.target
           />
         </Grid>
         <Grid item=true xs={Grid.Xs._12}>
@@ -125,7 +125,7 @@ let make = () => {
             doStop=kill
             isStarted=is_started
             isReady={_ => {
-              appState.target->Belt.Option.isSome && appState.interface->Belt.Option.isSome
+              dumpedState.target->Belt.Option.isSome && dumpedState.interface->Belt.Option.isSome
             }}
           />
         </Grid>

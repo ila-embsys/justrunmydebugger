@@ -43,10 +43,10 @@ let useOpenocdOutput = (): (string, string => unit) => {
 /// Store and provide access to config_set (set of current selected configs).
 ///
 /// Returns:
-///   appState: config set
-///   setAppState: setter for config set
+///   config_set_t: config set
+///   config_set_t => unit: setter for config set
 ///
-let useAppState = (): (config_set_t, config_set_t => unit) => {
+let useDumpedState = (): (config_set_t, config_set_t => unit) => {
   open Api
   open Promise
 
