@@ -37,9 +37,9 @@ let make = () => {
   let (dumpedState, setDumpedState) = useDumpedState()
   let config_lists = useConfigLists()
   let (openocd_output, set_openocd_output) = useOpenocdOutput()
+  let (tab_index, tabChangeHandler) = useMaterialUiTabIndex()
 
   let (is_started, set_is_started) = React.useState(() => false)
-  let (tab_panel_index, setTabPanelIndex) = React.useState(() => 0)
 
   /* Start OpenOCD process on backend with selected configs */
   let start = (~with_interface: bool) => {
@@ -165,7 +165,7 @@ let make = () => {
     <Grid container=true spacing=#V1 alignItems=#Stretch>
       <Grid item=true xs={Grid.Xs._3}>
         <Paper variant=#Outlined>
-          <Tabs orientation=#Vertical onChange=handleTabPanelChange value={tab_panel_index->Any}>
+          <Tabs orientation=#Vertical onChange=tabChangeHandler value={tab_index->Any}>
             <Tab label={"A predefined Board"->React.string} />
             <Tab label={"A Target with an Interface"->React.string} />
           </Tabs>
