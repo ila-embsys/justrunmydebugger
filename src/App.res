@@ -2,6 +2,33 @@ open Api
 open AppHooks
 open AppTypes
 
+/// Component to render OpenOCD output
+///
+/// Accept openocd output string as a child. Render
+/// multiline text filed with child string inside.
+///
+module OpenocdOutput = {
+  open MaterialUi
+
+  let placeholder: string = "Openocd output..."
+  let max_row_count = TextField.RowsMax.int(18)
+
+  @react.component
+  let make = (~children: string) => {
+    <TextField
+      multiline=true
+      rowsMax=max_row_count
+      size=#Medium
+      variant=#Outlined
+      fullWidth=true
+      placeholder
+      disabled={children->Js.String2.length == 0}
+      value={TextField.Value.string(children)}
+    />
+  }
+}
+
+/// Main interface component
 @react.component
 let make = () => {
   open Promise
@@ -9,12 +36,10 @@ let make = () => {
 
   let (dumpedState, setDumpedState) = useDumpedState()
   let config_lists = useConfigLists()
+  let (openocd_output, set_openocd_output) = useOpenocdOutput()
 
   let (is_started, set_is_started) = React.useState(() => false)
-
   let (tab_panel_index, setTabPanelIndex) = React.useState(() => 0)
-
-  let (openocd_output, set_openocd_output) = useOpenocdOutput()
 
   /* Start OpenOCD process on backend with selected configs */
   let start = (~with_interface: bool) => {
@@ -154,16 +179,7 @@ let make = () => {
       <Grid item=true xs={Grid.Xs._12} />
     </Grid>
     <Paper elevation={MaterialUi_Types.Number.int(0)}>
-      <TextField
-        multiline=true
-        rowsMax={TextField.RowsMax.int(18)}
-        size=#Medium
-        variant=#Outlined
-        fullWidth=true
-        placeholder="Openocd output..."
-        disabled={openocd_output->Js.String2.length == 0}
-        value={TextField.Value.string(openocd_output)}
-      />
+      <OpenocdOutput> openocd_output </OpenocdOutput>
     </Paper>
   </>
 }
