@@ -28,6 +28,18 @@ module OpenocdOutput = {
   }
 }
 
+/// Render children if `currentIndex` is equal to `tabIndex`
+module TabContent = {
+  @react.component
+  let make = (~currentIndex: int, ~tabIndex: int, ~children: React.element) => {
+    if currentIndex == tabIndex {
+      children
+    } else {
+      <> </>
+    }
+  }
+}
+
 /// Main interface component
 @react.component
 let make = () => {
@@ -90,75 +102,65 @@ let make = () => {
     set_is_started(_ => false)
   }
 
-  /* Tab onChange handler, set current tab index */
-  let handleTabPanelChange = (_, newValue: MaterialUi_Types.any) => {
-    setTabPanelIndex(newValue->MaterialUi_Types.anyUnpack)
-  }
-
-  /* Render tab content depending on index */
-  let render_tab_content = (index: int) => {
-    switch index {
-    | 0 =>
-      <Grid container=true spacing=#V3 alignItems=#Stretch>
-        <Grid item=true xs={Grid.Xs._12}>
-          <BoardList
-            selector_name="board"
-            items=config_lists.boards
-            onChange={board => {
-              setDumpedState({...dumpedState, board: board})
-            }}
-            selected=dumpedState.board
-          />
-        </Grid>
-        <Grid item=true xs={Grid.Xs._12}>
-          <StartStopButton
-            itemName="board"
-            doStart={() => start(~with_interface=false)}
-            doStop=kill
-            isStarted=is_started
-            isReady={() => dumpedState.board->Belt.Option.isSome}
-          />
-        </Grid>
+  // Tab with board selector
+  let tab_board =
+    <Grid container=true spacing=#V3 alignItems=#Stretch>
+      <Grid item=true xs={Grid.Xs._12}>
+        <BoardList
+          selector_name="board"
+          items=config_lists.boards
+          onChange={board => {
+            setDumpedState({...dumpedState, board: board})
+          }}
+          selected=dumpedState.board
+        />
       </Grid>
-
-    | 1 =>
-      <Grid container=true spacing=#V3 alignItems=#Stretch>
-        <Grid item=true xs={Grid.Xs._6}>
-          <BoardList
-            selector_name="interface"
-            items=config_lists.interfaces
-            onChange={interface => {
-              setDumpedState({...dumpedState, interface: interface})
-            }}
-            selected=dumpedState.interface
-          />
-        </Grid>
-        <Grid item=true xs={Grid.Xs._6}>
-          <BoardList
-            selector_name="target"
-            items=config_lists.targets
-            onChange={target => {
-              setDumpedState({...dumpedState, target: target})
-            }}
-            selected=dumpedState.target
-          />
-        </Grid>
-        <Grid item=true xs={Grid.Xs._12}>
-          <StartStopButton
-            itemName="target with interface"
-            doStart={() => start(~with_interface=true)}
-            doStop=kill
-            isStarted=is_started
-            isReady={_ => {
-              dumpedState.target->Belt.Option.isSome && dumpedState.interface->Belt.Option.isSome
-            }}
-          />
-        </Grid>
+      <Grid item=true xs={Grid.Xs._12}>
+        <StartStopButton
+          itemName="board"
+          doStart={() => start(~with_interface=false)}
+          doStop=kill
+          isStarted=is_started
+          isReady={() => dumpedState.board->Belt.Option.isSome}
+        />
       </Grid>
+    </Grid>
 
-    | _ => <> </>
-    }
-  }
+  // Tab with target and interface selectors
+  let tab_target =
+    <Grid container=true spacing=#V3 alignItems=#Stretch>
+      <Grid item=true xs={Grid.Xs._6}>
+        <BoardList
+          selector_name="interface"
+          items=config_lists.interfaces
+          onChange={interface => {
+            setDumpedState({...dumpedState, interface: interface})
+          }}
+          selected=dumpedState.interface
+        />
+      </Grid>
+      <Grid item=true xs={Grid.Xs._6}>
+        <BoardList
+          selector_name="target"
+          items=config_lists.targets
+          onChange={target => {
+            setDumpedState({...dumpedState, target: target})
+          }}
+          selected=dumpedState.target
+        />
+      </Grid>
+      <Grid item=true xs={Grid.Xs._12}>
+        <StartStopButton
+          itemName="target with interface"
+          doStart={() => start(~with_interface=true)}
+          doStop=kill
+          isStarted=is_started
+          isReady={_ => {
+            dumpedState.target->Belt.Option.isSome && dumpedState.interface->Belt.Option.isSome
+          }}
+        />
+      </Grid>
+    </Grid>
 
   /* Render: app interface */
   <>
@@ -173,7 +175,10 @@ let make = () => {
       </Grid>
       <Grid item=true xs={Grid.Xs._9}>
         <Card elevation={MaterialUi_Types.Number.int(3)}>
-          <CardContent> {render_tab_content(tab_panel_index)} </CardContent>
+          <CardContent>
+            <TabContent currentIndex=tab_index tabIndex=0> {tab_board} </TabContent>
+            <TabContent currentIndex=tab_index tabIndex=1> {tab_target} </TabContent>
+          </CardContent>
         </Card>
       </Grid>
       <Grid item=true xs={Grid.Xs._12} />
