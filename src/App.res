@@ -28,28 +28,17 @@ module OpenocdOutput = {
   }
 }
 
-/// Render children if `currentIndex` is equal to `tabIndex`
-module TabContent = {
-  @react.component
-  let make = (~currentIndex: int, ~tabIndex: int, ~children: React.element) => {
-    if currentIndex == tabIndex {
-      children
-    } else {
-      <> </>
-    }
-  }
-}
-
 /// Main interface component
 @react.component
 let make = () => {
   open Promise
   open MaterialUi
+  open MaterialUiUtils
 
   let (dumpedState, setDumpedState) = useDumpedState()
   let config_lists = useConfigLists()
   let (openocd_output, set_openocd_output) = useOpenocdOutput()
-  let (tab_index, tabChangeHandler) = useMaterialUiTabIndex()
+  let (tab_index, tabChangeHandler) = MaterialUiUtils.Hooks.useMaterialUiTabIndex()
 
   let (is_started, set_is_started) = React.useState(() => false)
 
