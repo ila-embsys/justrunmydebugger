@@ -8,33 +8,13 @@ let make = () => {
   open MaterialUi
 
   let (appState, setAppState) = useAppState()
-
-  let (config_lists: config_lists_t, setConfigLists) = React.useState(() => {
-    boards: [],
-    interfaces: [],
-    targets: [],
-  })
+  let config_lists = useConfigLists()
 
   let (is_started, set_is_started) = React.useState(() => false)
 
   let (tab_panel_index, setTabPanelIndex) = React.useState(() => 0)
 
   let (openocd_output, set_openocd_output) = useOpenocdOutput()
-
-  /* Effect: receive config lists */
-  React.useEffect1(() => {
-    invoke_get_config_lists()
-    ->then(lists => {
-      setConfigLists(_ => lists)
-      resolve()
-    })
-    ->catch(err => {
-      Js.Console.error(Api.promise_error_msg(err))
-      resolve()
-    })
-    ->ignore
-    None
-  }, [])
 
   /* Start OpenOCD process on backend with selected configs */
   let start = (~with_interface: bool) => {

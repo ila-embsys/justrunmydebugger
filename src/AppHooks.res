@@ -113,3 +113,36 @@ let useAppState = (): (config_set_t, config_set_t => unit) => {
 
   (config_set, dump_state)
 }
+
+/// Receive config lists
+///
+/// Returns:
+///     config_lists_t — received config lists
+///
+let useConfigLists = () => {
+  open Api
+  open Promise
+
+  let (config_lists: config_lists_t, setConfigLists) = React.useState(() => {
+    boards: [],
+    interfaces: [],
+    targets: [],
+  })
+
+  /* Effect: receive config lists */
+  React.useEffect1(() => {
+    invoke_get_config_lists()
+    ->then(lists => {
+      setConfigLists(_ => lists)
+      resolve()
+    })
+    ->catch(err => {
+      Js.Console.error(Api.promise_error_msg(err))
+      resolve()
+    })
+    ->ignore
+    None
+  }, [])
+
+  config_lists
+}
