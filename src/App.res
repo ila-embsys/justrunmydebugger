@@ -1,106 +1,55 @@
 open Api
+open AppHooks
+open AppTypes
 
-type config_set_t = {
-  board: option<Openocd.config_t>,
-  interface: option<Openocd.config_t>,
-  target: option<Openocd.config_t>,
+/// Component to render OpenOCD output
+///
+/// Accept openocd output string as a child. Render
+/// multiline text filed with child string inside.
+///
+module OpenocdOutput = {
+  open MaterialUi
+
+  let placeholder: string = "Openocd output..."
+  let max_row_count = TextField.RowsMax.int(18)
+
+  @react.component
+  let make = (~children: string) => {
+    <TextField
+      multiline=true
+      rowsMax=max_row_count
+      size=#Medium
+      variant=#Outlined
+      fullWidth=true
+      placeholder
+      disabled={children->Js.String2.length == 0}
+      value={TextField.Value.string(children)}
+    />
+  }
 }
 
+/// Main interface component
 @react.component
 let make = () => {
   open Promise
   open MaterialUi
+  open MaterialUiUtils
 
-  let default_openocd_unlisten: option<unit => unit> = None
+  let (dumpedState, setDumpedState) = useDumpedState()
+  let config_lists = useConfigLists()
+  let (openocd_output, set_openocd_output) = useOpenocdOutput()
+  let (tab_index, tabChangeHandler) = MaterialUiUtils.Hooks.useMaterialUiTabIndex()
 
-  let (config_set: config_set_t, setConfigSet) = React.useState(() => {
-    board: None,
-    interface: None,
-    target: None,
-  })
-
-  let (config_lists: config_lists_t, setConfigLists) = React.useState(() => {
-    boards: [],
-    interfaces: [],
-    targets: [],
-  })
-
-  let (openocd_output, set_openocd_output) = React.useState(() => "")
   let (is_started, set_is_started) = React.useState(() => false)
-  let (openocd_unlisten, set_openocd_unlisten) = React.useState(() => default_openocd_unlisten)
-
-  let (tab_panel_index, setTabPanelIndex) = React.useState(() => 0)
-
-  /* Dump selected configs set to FS */
-  let dump_state = (config_set: config_set_t) => {
-    let option_to_empty_cfg = (conf: option<Openocd.config_t>) => {
-      switch conf {
-      | Some(c) => c
-      | None => {name: "", path: ""}
-      }
-    }
-
-    let conf_to_save: Openocd.app_config_t = {
-      board: config_set.board->option_to_empty_cfg,
-      interface: config_set.interface->option_to_empty_cfg,
-      target: config_set.target->option_to_empty_cfg,
-    }
-
-    invoke_dump_state({dumped: conf_to_save})
-    ->then(_ => {
-      Js.Console.log("Dump selectors state")
-      Js.Console.log(conf_to_save)
-      resolve()
-    })
-    ->ignore
-  }
-
-  React.useEffect1(() => {
-    invoke_get_config_lists()
-    ->then(lists => {
-      setConfigLists(_ => lists)
-      resolve()
-    })
-    ->catch(err => {
-      Js.Console.error(Api.promise_error_msg(err))
-      resolve()
-    })
-    ->ignore
-
-    // Load the last saved configs
-    invoke_load_state()
-    ->then((conf: Openocd.app_config_t) => {
-      Js.Console.log("Load selectors state")
-      Js.Console.log(conf)
-
-      /* Turn empty config to option */
-      let as_option = (conf: Openocd.config_t) => {
-        if conf.name != "" {
-          Some(conf)
-        } else {
-          None
-        }
-      }
-
-      setConfigSet(_ => {
-        board: conf.board->as_option,
-        interface: conf.interface->as_option,
-        target: conf.target->as_option,
-      })
-      resolve()
-    })
-    ->ignore
-
-    None
-  }, [])
 
   /* Start OpenOCD process on backend with selected configs */
   let start = (~with_interface: bool) => {
     open Belt_Array
     open Belt_Option
 
-    let unwrap_configs = (configs: array<option<Openocd.config_t>>) => {
-      configs->reduce([], (arr, el) => {
+    /* Convert array<option<'a>> to array<'a> with None elements removed */
+    let unwrap_opt_array = (array: array<option<'a>>) => {
+      array->reduce([], (arr, el) => {
         switch el {
         | Some(el) => concat(arr, [el])
         | None => arr
@@ -109,16 +58,16 @@ let make = () => {
     }
 
     let configs = if with_interface {
-      [config_set.interface, config_set.target]
+      [dumpedState.interface, dumpedState.target]
     } else {
-      [config_set.board]
+      [dumpedState.board]
     }
 
     if configs->every(c => c->isSome) {
-      set_openocd_output(_ => "")
+      set_openocd_output("")
 
       invoke_start({
-        configs: configs->unwrap_configs,
+        configs: configs->unwrap_opt_array,
       })
       ->then(ret => {
         Js.Console.log(`Invoking OpenOCD return: ${ret}`)
@@ -142,123 +91,72 @@ let make = () => {
     set_is_started(_ => false)
   }
 
-  React.useEffect1(() => {
-    if openocd_unlisten->Belt.Option.isNone {
-      Js.Console.log(`Listener state: ${Js.String.make(is_started)}`)
-
-      Tauri.listen(~event_name="openocd-output", ~callback=e => {
-        Js.Console.log(`Call listener`)
-        let payload = e.payload
-        let message = payload.message
-
-        Js.Console.log(`payload: ${message}`)
-
-        let rec text_cuter = (text: string, length: int) => {
-          if text->Js.String.length > length {
-            let second_line_position = text->Js.String2.indexOf("\n") + 1
-
-            if second_line_position == -1 {
-              text
-            } else {
-              let substring = text->Js.String2.substr(~from=second_line_position)
-              text_cuter(substring, length)
-            }
-          } else {
-            text
-          }
-        }
-
-        set_openocd_output(output => {
-          (output ++ message)->text_cuter(5000)
-        })
-      })
-      ->then(unlisten => {
-        set_openocd_unlisten(_ => Some(unlisten))
-        Js.Console.log(`Set listener`)
-
-        resolve()
-      })
-      ->ignore
-    }
-    None
-  }, [])
-
-  let handleTabPanelChange = (_, newValue: MaterialUi_Types.any) => {
-    setTabPanelIndex(newValue->MaterialUi_Types.anyUnpack)
-  }
-
-  let render_tab_content = (index: int) => {
-    switch index {
-    | 0 =>
-      <Grid container=true spacing=#V3 alignItems=#Stretch>
-        <Grid item=true xs={Grid.Xs._12}>
-          <BoardList
-            selector_name="board"
-            items=config_lists.boards
-            onChange={board => {
-              setConfigSet(config => {...config, board: board})
-              dump_state({...config_set, board: board})
-            }}
-            selected=config_set.board
-          />
-        </Grid>
-        <Grid item=true xs={Grid.Xs._12}>
-          <StartStopButton
-            itemName="board"
-            doStart={() => start(~with_interface=false)}
-            doStop=kill
-            isStarted=is_started
-            isReady={() => config_set.board->Belt.Option.isSome}
-          />
-        </Grid>
+  // Tab with board selector
+  let tab_board =
+    <Grid container=true spacing=#V3 alignItems=#Stretch>
+      <Grid item=true xs={Grid.Xs._12}>
+        <BoardList
+          selector_name="board"
+          items=config_lists.boards
+          onChange={board => {
+            setDumpedState({...dumpedState, board: board})
+          }}
+          selected=dumpedState.board
+        />
       </Grid>
-
-    | 1 =>
-      <Grid container=true spacing=#V3 alignItems=#Stretch>
-        <Grid item=true xs={Grid.Xs._6}>
-          <BoardList
-            selector_name="interface"
-            items=config_lists.interfaces
-            onChange={interface => {
-              setConfigSet(config => {...config, interface: interface})
-              dump_state({...config_set, interface: interface})
-            }}
-            selected=config_set.interface
-          />
-        </Grid>
-        <Grid item=true xs={Grid.Xs._6}>
-          <BoardList
-            selector_name="target"
-            items=config_lists.targets
-            onChange={target => {
-              setConfigSet(config => {...config, target: target})
-              dump_state({...config_set, target: target})
-            }}
-            selected=config_set.target
-          />
-        </Grid>
-        <Grid item=true xs={Grid.Xs._12}>
-          <StartStopButton
-            itemName="target with interface"
-            doStart={() => start(~with_interface=true)}
-            doStop=kill
-            isStarted=is_started
-            isReady={_ => {
-              config_set.target->Belt.Option.isSome && config_set.interface->Belt.Option.isSome
-            }}
-          />
-        </Grid>
+      <Grid item=true xs={Grid.Xs._12}>
+        <StartStopButton
+          itemName="board"
+          doStart={() => start(~with_interface=false)}
+          doStop=kill
+          isStarted=is_started
+          isReady={() => dumpedState.board->Belt.Option.isSome}
+        />
       </Grid>
+    </Grid>
 
-    | _ => <> </>
-    }
-  }
+  // Tab with target and interface selectors
+  let tab_target =
+    <Grid container=true spacing=#V3 alignItems=#Stretch>
+      <Grid item=true xs={Grid.Xs._6}>
+        <BoardList
+          selector_name="interface"
+          items=config_lists.interfaces
+          onChange={interface => {
+            setDumpedState({...dumpedState, interface: interface})
+          }}
+          selected=dumpedState.interface
+        />
+      </Grid>
+      <Grid item=true xs={Grid.Xs._6}>
+        <BoardList
+          selector_name="target"
+          items=config_lists.targets
+          onChange={target => {
+            setDumpedState({...dumpedState, target: target})
+          }}
+          selected=dumpedState.target
+        />
+      </Grid>
+      <Grid item=true xs={Grid.Xs._12}>
+        <StartStopButton
+          itemName="target with interface"
+          doStart={() => start(~with_interface=true)}
+          doStop=kill
+          isStarted=is_started
+          isReady={_ => {
+            dumpedState.target->Belt.Option.isSome && dumpedState.interface->Belt.Option.isSome
+          }}
+        />
+      </Grid>
+    </Grid>
 
+  /* Render: app interface */
   <>
     <Grid container=true spacing=#V1 alignItems=#Stretch>
       <Grid item=true xs={Grid.Xs._3}>
         <Paper variant=#Outlined>
-          <Tabs orientation=#Vertical onChange=handleTabPanelChange value={tab_panel_index->Any}>
+          <Tabs orientation=#Vertical onChange=tabChangeHandler value={tab_index->Any}>
             <Tab label={"A predefined Board"->React.string} />
             <Tab label={"A Target with an Interface"->React.string} />
           </Tabs>
@@ -266,22 +164,16 @@ let make = () => {
       </Grid>
       <Grid item=true xs={Grid.Xs._9}>
         <Card elevation={MaterialUi_Types.Number.int(3)}>
-          <CardContent> {render_tab_content(tab_panel_index)} </CardContent>
+          <CardContent>
+            <TabContent currentIndex=tab_index tabIndex=0> {tab_board} </TabContent>
+            <TabContent currentIndex=tab_index tabIndex=1> {tab_target} </TabContent>
+          </CardContent>
         </Card>
       </Grid>
       <Grid item=true xs={Grid.Xs._12} />
     </Grid>
     <Paper elevation={MaterialUi_Types.Number.int(0)}>
-      <TextField
-        multiline=true
-        rowsMax={TextField.RowsMax.int(18)}
-        size=#Medium
-        variant=#Outlined
-        fullWidth=true
-        placeholder="Openocd output..."
-        disabled={openocd_output->Js.String2.length == 0}
-        value={TextField.Value.string(openocd_output)}
-      />
+      <OpenocdOutput> openocd_output </OpenocdOutput>
     </Paper>
   </>
 }
