@@ -15,8 +15,7 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
-  build:
+  setup:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest] # macos-latest no one to support
@@ -66,22 +65,26 @@ jobs:
       - name: Fetch dependencies
         run: yarn install # will run `yarn install` command
 
-      - name: Build debug variant
+  build:
+    needs: setup
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest] # macos-latest no one to support
+        build: [debug, release]
+    # The type of runner that the job will run on
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Build ${{ matrix.build }} variant
         run: yarn build
-
-      - name: Archive debug artifacts
-        uses: actions/upload-artifact@v2
-        with:
-          name: bundle-debug
-          path: |
-            src-tauri/target/debug/bundle
-      
-      - name: Build production variant
+        if: matrix.build == 'debug'
+        
+      - name: Build ${{ matrix.build }} variant
         run: yarn build:prod
+        if: matrix.build == 'production'
 
-      - name: Archive production artifacts
+      - name: Archive ${{ matrix.build }} artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: bundle-dev
+          name: bundle-${{ matrix.build }}-${{ matrix.os }}
           path: |
-            src-tauri/target/release/bundle
+            src-tauri/target/${{ matrix.build }}/bundle/*/justrunmyddebugger_*_*_.*
