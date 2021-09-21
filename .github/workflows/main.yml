@@ -15,10 +15,11 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  setup:
+  build:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest] # macos-latest no one to support
+        build: [debug, release]
     # The type of runner that the job will run on
     runs-on: ${{ matrix.os }}
 
@@ -31,14 +32,6 @@ jobs:
         with:
           path: 'node_modules'
           key: ${{ runner.os }}-modules-${{ hashFiles('package.json') }}
-
-      - name: Use Node.js
-        uses: actions/setup-node@v2
-        #with:
-        #  cache: 'npm' # Need package-lock.json or yarn.lock
-          
-      - name: Install Yarn
-        run: npm install -g yarn
         
       - name:  Install system dependencies for Tari 
         run:   |
@@ -69,29 +62,12 @@ jobs:
 
       - name: Fetch dependencies
         run: yarn install # will run `yarn install` command
-
-
-  build:
-    needs: setup
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest] # macos-latest no one to support
-        build: [debug, release]
-    # The type of runner that the job will run on
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v2
-
-      - uses: actions/cache@v2
-        with:
-          path: 'node_modules'
-          key: ${{ runner.os }}-modules-${{ hashFiles('package.json') }}
     
-      - name: Build ${{ matrix.build }} variant
+      - name: Build debug variant
         run: yarn build
         if: matrix.build == 'debug'
         
-      - name: Build ${{ matrix.build }} variant
+      - name: Build production variant
         run: yarn build:prod
         if: matrix.build == 'production'
 
