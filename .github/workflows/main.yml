@@ -26,6 +26,11 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
+      
+      - uses: actions/cache@v2
+        with:
+          path: 'node_modules'
+          key: ${{ runner.os }}-modules-${{ hashFiles('package.json') }}
 
       - name: Use Node.js
         uses: actions/setup-node@v2
@@ -64,11 +69,7 @@ jobs:
 
       - name: Fetch dependencies
         run: yarn install # will run `yarn install` command
-        
-      - uses: actions/upload-artifact@v2
-        with:
-          name: setup-${{ matrix.build }}-artifact
-          path: ${{ github.workspace }}
+
 
   build:
     needs: setup
@@ -79,9 +80,12 @@ jobs:
     # The type of runner that the job will run on
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/download-artifact@v2
+      - uses: actions/checkout@v2
+
+      - uses: actions/cache@v2
         with:
-          name: setup-${{ matrix.build }}-artifact
+          path: 'node_modules'
+          key: ${{ runner.os }}-modules-${{ hashFiles('package.json') }}
     
       - name: Build ${{ matrix.build }} variant
         run: yarn build
