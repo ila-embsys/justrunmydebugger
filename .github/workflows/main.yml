@@ -85,9 +85,26 @@ jobs:
         run: yarn build:prod
         if: matrix.build == 'release'
 
-      - name: Archive ${{ matrix.build }} artifacts
+      - name: Archive ${{ matrix.build }} DEB artifacts
         uses: actions/upload-artifact@v2
+        if: matrix.os == 'ubuntu-latest'
         with:
-          name: ${{ env.bundle_app_name_prefix }}-bundle-${{ matrix.build }}-${{ matrix.os }}
+          name: ${{ env.bundle_app_name_prefix }}-bundle-${{ matrix.build }}-${{ matrix.os }}-deb
           path: |
-            src-tauri/target/${{ matrix.build }}/bundle/*/${{ env.bundle_app_name_prefix }}_*_*.*
+            src-tauri/target/${{ matrix.build }}/bundle/deb/${{ env.bundle_app_name_prefix }}_*_*.*
+            
+      - name: Archive ${{ matrix.build }} AppImage artifacts
+        uses: actions/upload-artifact@v2
+        if: matrix.os == 'ubuntu-latest'
+        with:
+          name: ${{ env.bundle_app_name_prefix }}-bundle-${{ matrix.build }}-${{ matrix.os }}-appimage
+          path: |
+            src-tauri/target/${{ matrix.build }}/bundle/appimage/${{ env.bundle_app_name_prefix }}_*_*.*
+            
+      - name: Archive ${{ matrix.build }} MSI artifacts
+        uses: actions/upload-artifact@v2
+        if: matrix.os == 'windows-latest'
+        with:
+          name: ${{ env.bundle_app_name_prefix }}-bundle-${{ matrix.build }}-${{ matrix.os }}-msi
+          path: |
+            src-tauri/target/${{ matrix.build }}/bundle/msi/${{ env.bundle_app_name_prefix }}_*_*.*
