@@ -64,6 +64,11 @@ jobs:
 
       - name: Fetch dependencies
         run: yarn install # will run `yarn install` command
+        
+      - uses: actions/upload-artifact@v2
+        with:
+          name: setup-${{ matrix.build }}-artifact
+          path: ${{ github.workspace }}
 
   build:
     needs: setup
@@ -74,6 +79,10 @@ jobs:
     # The type of runner that the job will run on
     runs-on: ${{ matrix.os }}
     steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: setup-${{ matrix.build }}-artifact
+    
       - name: Build ${{ matrix.build }} variant
         run: yarn build
         if: matrix.build == 'debug'
