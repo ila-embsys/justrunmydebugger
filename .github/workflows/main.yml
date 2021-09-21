@@ -76,4 +76,4 @@ jobs:
         with:
           name: bundle-${{ matrix.build }}-${{ matrix.os }}
           path: |
-            src-tauri/target/${{ matrix.build }}/bundle/*/justrunmyddebugger_*_*.*
+            src-tauri/target/${{ matrix.build }}/bundle/*/justrunmydebugger_*_*.*
