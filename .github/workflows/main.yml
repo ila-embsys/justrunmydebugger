@@ -34,7 +34,7 @@ jobs:
       - uses: actions/cache@v2
         with:
           path: 'node_modules'
-          key: ${{ runner.os }}-modules-${{ hashFiles('package.json') }}
+          key: ${{ runner.os }}-modules-${{ matrix.build }}-${{ hashFiles('package.json') }}
           
       - uses: actions/cache@v2
         with:
@@ -45,7 +45,7 @@ jobs:
             ~/.cargo/git/db/
             src-tauri/target/
             !src-tauri/target/bundle
-          key: ${{ runner.os }}-cargo-${{ hashFiles('src-tauri/Cargo.toml') }}
+          key: ${{ runner.os }}-cargo-${{ matrix.build }}-${{ hashFiles('src-tauri/Cargo.toml') }}
         
       - name:  Install system dependencies for Tari 
         run:   |
