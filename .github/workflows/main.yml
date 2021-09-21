@@ -47,7 +47,7 @@ jobs:
             !src-tauri/target/bundle
           key: ${{ runner.os }}-cargo-${{ matrix.build }}-${{ hashFiles('src-tauri/Cargo.toml') }}
         
-      - name:  Install system dependencies for Tari 
+      - name:  Install system dependencies for Tauri 
         run:   |
                if [ "$RUNNER_OS" == "Linux" ]; then
                     sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.0-dev \
