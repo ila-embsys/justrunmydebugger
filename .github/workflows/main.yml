@@ -2,6 +2,9 @@
 
 name: CI
 
+env:
+  bundle_app_name_prefix: justrunmydebugger
+
 # Controls when the workflow will run
 on:
   # Triggers the workflow on push or pull request events but only for the master branch
@@ -32,6 +35,17 @@ jobs:
         with:
           path: 'node_modules'
           key: ${{ runner.os }}-modules-${{ hashFiles('package.json') }}
+          
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            src-tauri/target/
+            !src-tauri/target/bundle
+          key: ${{ runner.os }}-cargo-${{ hashFiles('src-tauri/Cargo.toml') }}
         
       - name:  Install system dependencies for Tari 
         run:   |
@@ -74,6 +88,6 @@ jobs:
       - name: Archive ${{ matrix.build }} artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: bundle-${{ matrix.build }}-${{ matrix.os }}
+          name: ${{ env.bundle_app_name_prefix }}-bundle-${{ matrix.build }}-${{ matrix.os }}
           path: |
-            src-tauri/target/${{ matrix.build }}/bundle/*/justrunmydebugger_*_*.*
+            src-tauri/target/${{ matrix.build }}/bundle/*/${{ env.bundle_app_name_prefix }}_*_*.*
