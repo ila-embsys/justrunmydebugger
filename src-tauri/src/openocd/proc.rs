@@ -1,4 +1,5 @@
 use std::option::Option;
+use std::path::Path;
 use std::process::{Child, Command, Stdio};
 use which::which;
 
@@ -28,5 +29,14 @@ pub fn start(config: &[Config]) -> Option<Child> {
         }
     } else {
         None
+    }
+}
+
+pub fn start_exec(exe_path: &Path, args: Vec<String>) -> Option<String> {
+    let out = Command::new(exe_path).args(args).output();
+
+    match out {
+        Ok(out) => Some(String::from_utf8_lossy(&out.stderr).to_string()),
+        Err(_) => None,
     }
 }

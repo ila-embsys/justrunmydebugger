@@ -1,8 +1,11 @@
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
 use std::option::Option;
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
+
+use crate::openocd::proc::start_exec;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
@@ -88,11 +91,45 @@ fn extract_configs_from(configs_dir: &Path) -> Option<Vec<Config>> {
     }
 }
 
+/// Extract path to a real openocd binary through executing it with a wrong argument
+fn hack_binary_path(binary: &Path) -> Option<PathBuf> {
+    // Run openocd with a non existing flag
+    let output = start_exec(binary, vec!["--bad_flag".into()])?;
+
+    // Path to binary always locates near ": unknown option" string
+    let path_regex = Regex::new(r"(?P<path>.+): unknown option").ok();
+    let path = path_regex?.captures(&output)?.name("path")?.as_str();
+
+    Some(PathBuf::from(path))
+}
+
 #[cfg(target_os = "windows")]
 pub fn root_path() -> Option<PathBuf> {
+    let from_bin_to_root =
+        |bin: &Path| -> Option<PathBuf> { Some(bin.parent()?.parent()?.to_owned()) };
+
+    let validate_root = |root: &Path| scripts_path(root).is_dir();
+
+    // Try to find openocd executable
     let binary = which::which("openocd");
     if let Ok(binary) = binary {
-        Some(binary.parent()?.parent()?.to_owned())
+        // Get root of openocd
+        let root = from_bin_to_root(binary.as_path())?;
+
+        // If we got an unexpected root we should try harder (see else branch)
+        if validate_root(root.as_path()) {
+            Some(root)
+        } else {
+            // Try to extract a real path to binary by hacking openocd (see `hack_binary_path`)
+            let binary = hack_binary_path(binary.as_path())?;
+            let root = from_bin_to_root(binary.as_path())?;
+            if validate_root(root.as_path()) {
+                Some(root)
+            } else {
+                // Just give up...
+                None
+            }
+        }
     } else {
         None
     }
