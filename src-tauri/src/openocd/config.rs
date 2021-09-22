@@ -1,4 +1,4 @@
-#[allow(unused_imports)]
+#[cfg_attr(unix, allow(unused_imports))]
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
@@ -6,7 +6,7 @@ use std::option::Option;
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
 
-#[allow(unused_imports)]
+#[cfg_attr(unix, allow(unused_imports))]
 use crate::openocd::proc::start_exec;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -194,12 +194,12 @@ impl OpenocdPaths {
         Some(root_iter.next()?.into_path())
     }
 
-    #[allow(dead_code)]
+    #[cfg_attr(unix, allow(dead_code))]
     fn validate_root(root: &Path) -> bool {
         Self::scripts(root).is_some()
     }
 
-    #[allow(dead_code)]
+    #[cfg_attr(unix, allow(dead_code))]
     fn from_bin_to_root(bin: &Path) -> Option<PathBuf> {
         Some(bin.parent()?.parent()?.to_owned())
     }

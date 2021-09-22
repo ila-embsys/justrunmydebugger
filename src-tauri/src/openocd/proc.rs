@@ -32,7 +32,7 @@ pub fn start(config: &[Config]) -> Option<Child> {
     }
 }
 
-#[allow(dead_code)]
+#[cfg_attr(unix, allow(dead_code))]
 pub fn start_exec(exe_path: &Path, args: Vec<String>) -> Option<String> {
     let out = Command::new(exe_path).args(args).output();
 
