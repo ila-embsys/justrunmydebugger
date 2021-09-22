@@ -91,78 +91,115 @@ fn extract_configs_from(configs_dir: &Path) -> Option<Vec<Config>> {
     }
 }
 
-/// Extract path to a real openocd binary through executing it with a wrong argument
-fn hack_binary_path(binary: &Path) -> Option<PathBuf> {
-    // Run openocd with a non existing flag
-    let output = start_exec(binary, vec!["--bad_flag".into()])?;
-
-    // Path to binary always locates near ": unknown option" string
-    let path_regex = Regex::new(r"(?P<path>.+): unknown option").ok();
-    let path = path_regex?.captures(&output)?.name("path")?.as_str();
-
-    Some(PathBuf::from(path))
+struct OpenocdPaths {
+    board: PathBuf,
+    target: PathBuf,
+    interface: PathBuf,
 }
 
-#[cfg(target_os = "windows")]
-pub fn root_path() -> Option<PathBuf> {
-    let from_bin_to_root =
-        |bin: &Path| -> Option<PathBuf> { Some(bin.parent()?.parent()?.to_owned()) };
+impl OpenocdPaths {
+    pub fn new() -> Result<OpenocdPaths, String> {
+        let paths = Self::root()
+            .and_then(|root| Self::scripts(root.as_path()))
+            .and_then(|scripts| {
+                Some(OpenocdPaths {
+                    board: Self::board(scripts.as_path()),
+                    target: Self::target(scripts.as_path()),
+                    interface: Self::interface(scripts.as_path()),
+                })
+            });
 
-    let validate_root = |root: &Path| scripts_path(root).is_dir();
+        paths.ok_or("OpenOCD not found!".into())
+    }
 
-    // Try to find openocd executable
-    let binary = which::which("openocd");
-    if let Ok(binary) = binary {
-        // Get root of openocd
-        let root = from_bin_to_root(binary.as_path())?;
+    fn board(script: &Path) -> PathBuf {
+        script.join("board")
+    }
 
-        // If we got an unexpected root we should try harder (see else branch)
-        if validate_root(root.as_path()) {
-            Some(root)
-        } else {
-            // Try to extract a real path to binary by hacking openocd (see `hack_binary_path`)
-            let binary = hack_binary_path(binary.as_path())?;
-            let root = from_bin_to_root(binary.as_path())?;
-            if validate_root(root.as_path()) {
+    fn interface(script: &Path) -> PathBuf {
+        script.join("interface")
+    }
+
+    fn target(script: &Path) -> PathBuf {
+        script.join("target")
+    }
+
+    /// Extract path to a real openocd binary through executing it with a wrong argument
+    fn hack_binary_path(binary: &Path) -> Option<PathBuf> {
+        // Run openocd with a non existing flag
+        let output = start_exec(binary, vec!["--bad_flag".into()])?;
+
+        // Path to binary always locates near ": unknown option" string
+        let path_regex = Regex::new(r"(?P<path>.+): unknown option").ok();
+        let path = path_regex?.captures(&output)?.name("path")?.as_str();
+
+        Some(PathBuf::from(path))
+    }
+
+    #[cfg(target_os = "windows")]
+    fn root() -> Option<PathBuf> {
+        // Try to find openocd executable
+        let binary = which::which("openocd");
+        if let Ok(binary) = binary {
+            // Get root of openocd
+            let root = Self::from_bin_to_root(binary.as_path())?;
+
+            // If we got an unexpected root we should try harder (see else branch)
+            if Self::validate_root(root.as_path()) {
                 Some(root)
             } else {
-                // Just give up...
-                None
+                // Try to extract a real path to binary by hacking openocd (see `hack_binary_path`)
+                let true_binary = Self::hack_binary_path(binary.as_path())?;
+                let true_root = Self::from_bin_to_root(true_binary.as_path())?;
+                if Self::validate_root(true_root.as_path()) {
+                    Some(true_root)
+                } else {
+                    // Just give up...
+                    None
+                }
             }
+        } else {
+            None
         }
-    } else {
-        None
     }
-}
 
-#[cfg(target_os = "linux")]
-pub fn root_path() -> Option<PathBuf> {
-    let unix_path_1 = PathBuf::from("/usr/local/share/openocd");
-    let unix_path_2 = PathBuf::from("/usr/share/openocd");
+    #[cfg(target_os = "linux")]
+    fn root() -> Option<PathBuf> {
+        let unix_path_1 = PathBuf::from("/usr/local/share/openocd");
+        let unix_path_2 = PathBuf::from("/usr/share/openocd");
 
-    if unix_path_1.exists() {
-        Some(unix_path_1)
-    } else if unix_path_2.exists() {
-        Some(unix_path_2)
-    } else {
-        None
+        if unix_path_1.exists() {
+            Some(unix_path_1)
+        } else if unix_path_2.exists() {
+            Some(unix_path_2)
+        } else {
+            None
+        }
     }
-}
 
-pub fn scripts_path(openocd_path: &Path) -> PathBuf {
-    openocd_path.join("scripts")
-}
+    fn scripts(openocd_path: &Path) -> Option<PathBuf> {
+        let mut root_iter = WalkDir::new(openocd_path)
+            .into_iter()
+            .flatten()
+            .filter_map(|entry| {
+                let name = entry.path().file_name()?.to_string_lossy().to_string();
+                if name == "scripts" {
+                    Some(entry)
+                } else {
+                    None
+                }
+            });
 
-pub fn board_path(openocd_path: &Path) -> PathBuf {
-    scripts_path(openocd_path).join("board")
-}
+        Some(root_iter.next()?.into_path())
+    }
 
-pub fn interface_path(openocd_path: &Path) -> PathBuf {
-    scripts_path(openocd_path).join("interface")
-}
+    fn validate_root(root: &Path) -> bool {
+        Self::scripts(root).is_some()
+    }
 
-pub fn target_path(openocd_path: &Path) -> PathBuf {
-    scripts_path(openocd_path).join("target")
+    fn from_bin_to_root(bin: &Path) -> Option<PathBuf> {
+        Some(bin.parent()?.parent()?.to_owned())
+    }
 }
 
 #[derive(Serialize)]
@@ -174,16 +211,12 @@ pub struct ConfigsSet {
 
 impl ConfigsSet {
     pub fn new() -> Result<ConfigsSet, String> {
-        let root = root_path();
-        if let Some(root) = root {
-            Ok(ConfigsSet {
-                boards: ConfigsSet::extract_configs(board_path(&root).as_path()),
-                interfaces: ConfigsSet::extract_configs(interface_path(&root).as_path()),
-                targets: ConfigsSet::extract_configs(target_path(&root).as_path()),
-            })
-        } else {
-            Err("OpenOCD not found!".into())
-        }
+        let paths = OpenocdPaths::new();
+        paths.map(|paths| ConfigsSet {
+            boards: Self::extract_configs(paths.board.as_path()),
+            interfaces: Self::extract_configs(paths.interface.as_path()),
+            targets: Self::extract_configs(paths.target.as_path()),
+        })
     }
 
     fn extract_configs(path: &Path) -> Vec<Config> {
