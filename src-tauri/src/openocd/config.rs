@@ -1,3 +1,4 @@
+#[allow(unused_imports)]
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
@@ -5,6 +6,7 @@ use std::option::Option;
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
 
+#[allow(unused_imports)]
 use crate::openocd::proc::start_exec;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -101,15 +103,13 @@ impl OpenocdPaths {
     pub fn new() -> Result<OpenocdPaths, String> {
         let paths = Self::root()
             .and_then(|root| Self::scripts(root.as_path()))
-            .and_then(|scripts| {
-                Some(OpenocdPaths {
-                    board: Self::board(scripts.as_path()),
-                    target: Self::target(scripts.as_path()),
-                    interface: Self::interface(scripts.as_path()),
-                })
+            .map(|scripts| OpenocdPaths {
+                board: Self::board(scripts.as_path()),
+                target: Self::target(scripts.as_path()),
+                interface: Self::interface(scripts.as_path()),
             });
 
-        paths.ok_or("OpenOCD not found!".into())
+        paths.ok_or_else(|| "OpenOCD not found!".into())
     }
 
     fn board(script: &Path) -> PathBuf {
@@ -125,6 +125,7 @@ impl OpenocdPaths {
     }
 
     /// Extract path to a real openocd binary through executing it with a wrong argument
+    #[cfg(target_os = "windows")]
     fn hack_binary_path(binary: &Path) -> Option<PathBuf> {
         // Run openocd with a non existing flag
         let output = start_exec(binary, vec!["--bad_flag".into()])?;
@@ -193,10 +194,12 @@ impl OpenocdPaths {
         Some(root_iter.next()?.into_path())
     }
 
+    #[allow(dead_code)]
     fn validate_root(root: &Path) -> bool {
         Self::scripts(root).is_some()
     }
 
+    #[allow(dead_code)]
     fn from_bin_to_root(bin: &Path) -> Option<PathBuf> {
         Some(bin.parent()?.parent()?.to_owned())
     }
