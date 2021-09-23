@@ -76,8 +76,11 @@ let useDumpedState = (): (config_set_t, config_set_t => unit) => {
 
     invoke_dump_state({dumped: conf_to_save})
     ->then(_ => {
-      Js.Console.log("Dump selectors state")
-      Js.Console.log(conf_to_save)
+      Js.Console.info2("Dump selectors state:", conf_to_save)
+      resolve()
+    })
+    ->catch(err => {
+      Js.Console.error(Api.promise_error_msg(err))
       resolve()
     })
     ->ignore
@@ -87,8 +90,7 @@ let useDumpedState = (): (config_set_t, config_set_t => unit) => {
   React.useEffect1(() => {
     invoke_load_state()
     ->then((conf: Openocd.app_config_t) => {
-      Js.Console.log("Load selectors state")
-      Js.Console.log(conf)
+      Js.Console.info2("Load selectors state:", conf)
 
       /* Turn empty config to option */
       let as_option = (conf: Openocd.config_t) => {
@@ -104,6 +106,10 @@ let useDumpedState = (): (config_set_t, config_set_t => unit) => {
         interface: conf.interface->as_option,
         target: conf.target->as_option,
       })
+      resolve()
+    })
+    ->catch(err => {
+      Js.Console.error(Api.promise_error_msg(err))
       resolve()
     })
     ->ignore

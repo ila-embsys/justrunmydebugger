@@ -11,6 +11,7 @@ mod cmd;
 mod config;
 mod openocd;
 mod state;
+mod error;
 
 fn main() {
     ::std::env::set_var("RUST_LOG", "debug");

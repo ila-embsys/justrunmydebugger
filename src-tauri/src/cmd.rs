@@ -7,16 +7,13 @@ use crate::config::AppConfig;
 use crate::openocd::config::{Config, ConfigsSet};
 use crate::openocd::proc as openocd;
 use crate::state::State;
+use crate::error::ErrorMsg;
 
 #[derive(Clone, serde::Serialize)]
 struct Payload {
     message: String,
 }
 
-#[derive(Clone, serde::Serialize)]
-pub struct ErrorMsg {
-    pub message: String,
-}
 
 /// Return a struct with three lists of `Config`
 ///
@@ -34,7 +31,7 @@ pub fn get_config_lists() -> Result<ConfigsSet, ErrorMsg> {
 /// Return error string if something gone wrong.
 ///
 #[tauri::command]
-pub fn kill(state: tauri::State<State>) -> String {
+pub fn kill(state: tauri::State<State>) -> Result<String, ErrorMsg> {
     let res = state
         .openocd_proc
         .lock()
@@ -51,8 +48,8 @@ pub fn kill(state: tauri::State<State>) -> String {
         });
 
     match res {
-        Some(err) => err.into(),
-        None => "".into(),
+        Some(err) => Err(err.into()),
+        None => Ok("".into()),
     }
 }
 
@@ -81,7 +78,7 @@ pub fn kill(state: tauri::State<State>) -> String {
 /// ```
 ///
 #[tauri::command]
-pub fn start(configs: Vec<Config>, state: tauri::State<State>, window: Window) -> String {
+pub fn start(configs: Vec<Config>, state: tauri::State<State>, window: Window) -> Result<String, ErrorMsg> {
     info!(
         r#"Start openocd with configs: "{:?}""#,
         configs
@@ -97,7 +94,7 @@ pub fn start(configs: Vec<Config>, state: tauri::State<State>, window: Window) -
 
     if let Ok(workers) = result {
         if workers.active_count() > 0 {
-            "OpenOCD has been already started!".into()
+            Err("OpenOCD has been already started!".into())
         } else {
             workers.execute(move || {
                 let command = openocd::start(&configs);
@@ -127,10 +124,10 @@ pub fn start(configs: Vec<Config>, state: tauri::State<State>, window: Window) -
                 }
             });
 
-            "OpenOCD started!".into()
+            Ok("OpenOCD started!".into())
         }
     } else {
-        "OpenOCD start failed!".into()
+        Err("OpenOCD start failed!".into())
     }
 }
 
@@ -139,12 +136,12 @@ pub fn start(configs: Vec<Config>, state: tauri::State<State>, window: Window) -
 /// Return string with status.
 ///
 #[tauri::command]
-pub fn dump_state(dumped: AppConfig) -> String {
+pub fn dump_state(dumped: AppConfig) -> Result<String, ErrorMsg> {
     let res = confy::store("justrunmydebugger-config", dumped);
 
     match res {
-        Ok(_) => "Config was dumped!".into(),
-        Err(e) => format!("Config dump failed: {}", e),
+        Ok(_) => Ok("Config was dumped!".into()),
+        Err(e) => Err(format!("Config dump failed: {}", e).into()),
     }
 }
 
