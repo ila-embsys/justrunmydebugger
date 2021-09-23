@@ -70,7 +70,11 @@ let make = () => {
         configs: configs->unwrap_opt_array,
       })
       ->then(ret => {
-        Js.Console.log(`Invoking OpenOCD return: ${ret}`)
+        Js.Console.info(`Invoking OpenOCD return: ${ret}`)
+        resolve()
+      })
+      ->catch(err => {
+        Js.Console.error(Api.promise_error_msg(err))
         resolve()
       })
       ->ignore
@@ -83,7 +87,11 @@ let make = () => {
   let kill = () => {
     invoke_kill()
     ->then(ret => {
-      Js.Console.log(`Killing OpenOCD return: ${ret}`)
+      Js.Console.info(`Killing OpenOCD return: ${ret}`)
+      resolve()
+    })
+    ->catch(err => {
+      Js.Console.error(Api.promise_error_msg(err))
       resolve()
     })
     ->ignore
