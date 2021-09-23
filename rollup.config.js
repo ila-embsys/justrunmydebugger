@@ -6,6 +6,7 @@ import html from '@open-wc/rollup-plugin-html';
 import replace from '@rollup/plugin-replace';
 import fs from 'fs';
 import path from 'path';
+import styles from "rollup-plugin-styles";
 
 export default {
     input: 'src/main.bs.js',
@@ -31,5 +32,6 @@ export default {
             'process.env.NODE_ENV': JSON.stringify('production'),
             'preventAssignment': true
         }),
+        styles()
     ]
 };
