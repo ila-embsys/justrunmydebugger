@@ -8,7 +8,7 @@ use crate::config::AppConfig;
 use crate::error::ErrorMsg;
 use crate::notification;
 use crate::openocd::config::{Config, ConfigsSet};
-use crate::openocd::proc as openocd;
+use crate::openocd::{event as openocd_event, proc as openocd};
 use crate::state::State;
 
 /// Return a struct with three lists of `Config`
@@ -27,7 +27,7 @@ pub fn get_config_lists() -> Result<ConfigsSet, ErrorMsg> {
 /// Return error string if something gone wrong.
 ///
 #[tauri::command]
-pub fn kill(state: tauri::State<State>) -> Result<String, ErrorMsg> {
+pub fn kill(state: tauri::State<State>, window: Window) -> Result<String, ErrorMsg> {
     let res = state
         .openocd_proc
         .lock()
@@ -45,7 +45,10 @@ pub fn kill(state: tauri::State<State>) -> Result<String, ErrorMsg> {
 
     match res {
         Some(err) => Err(err.into()),
-        None => Ok("".into()),
+        None => {
+            openocd_event::send(&window, openocd_event::Kind::Stop);
+            Ok("OpenOCD stopped".into())
+        }
     }
 }
 
@@ -107,6 +110,7 @@ pub fn start(
 
                     info!("OpenOCD started!");
                     notification::send(&window, "OpenOCD started!", notification::Level::Info);
+                    openocd_event::send(&window, openocd_event::Kind::Start);
 
                     reader
                         .lines()
@@ -128,6 +132,7 @@ pub fn start(
 
                     warn!("OpenOCD stopped!");
                     notification::send(&window, "OpenOCD stopped!", notification::Level::Warn);
+                    openocd_event::send(&window, openocd_event::Kind::Stop);
                 }
             });
 
