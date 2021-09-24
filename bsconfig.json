@@ -18,6 +18,8 @@
         "@rescript/react",
         "rescript-material-ui",
         "rescript-material-ui-lab",
-        "@ryyppy/rescript-promise"
-   ]
+        "@ryyppy/rescript-promise",
+        "rescript-logger"
+   ],
+   "ppx-flags": ["rescript-logger/ppx"]
   }
