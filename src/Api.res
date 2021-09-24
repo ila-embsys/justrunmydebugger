@@ -35,12 +35,10 @@ module Notification = {
       switch level {
       | Some(level) => {level_num: level_num, message: message, level: level}->Ok
       | _ =>
-        Error(
-          #UnexpectedJsonValue(
-            [],
-            `"level": expected a number 0..2, current is ${level_num->Js.Int.toString}`,
-          ),
-        )
+        #UnexpectedJsonValue(
+          [],
+          `"level": expected a number 0..2, current is ${level_num->Js.Int.toString}`,
+        )->Error
       }
     },
     Jzon.field("level", Jzon.int),
