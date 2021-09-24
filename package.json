@@ -5,8 +5,9 @@
   "author": "ila",
   "license": "GPL-3.0-or-later",
   "scripts": {
-    "re:build": "rescript",
-    "re:start": "rescript build -w",
+    "re:build:debug": "cross-env RES_LOG=debug rescript",
+    "re:build:prod": "cross-env RES_LOG=info rescript",
+    "re:start": "cross-env RES_LOG=trace rescript build -w",
     "re:clean": "rescript clean -with-deps",
     "rollup:watch": "rollup --config -w -p \"rollup-plugin-livereload='dist'\" -p \"rollup-plugin-serve='dist'\"",
     "rollup:build": "rollup --config",
@@ -15,8 +16,8 @@
     "tauri:build:prod": "tauri build",
     "start": "run-p re:start rollup:watch tauri:dev",
     "start:no-rewatch": "run-p rollup:watch tauri:dev",
-    "build": "run-s re:build rollup:build tauri:build",
-    "build:prod": "run-s re:build rollup:build tauri:build:prod"
+    "build": "run-s re:build:debug rollup:build tauri:build",
+    "build:prod": "run-s re:build:prod rollup:build tauri:build:prod"
   },
   "devDependencies": {
     "@material-ui/core": "^4.12.3",
@@ -43,6 +44,8 @@
     "react": "^16.8.1",
     "react-dom": "^16.8.1",
     "rescript-jzon": "^1.2.0",
+    "cross-env": "^7.0.3",
+    "rescript-logger": "^2.0.0",
     "rescript-material-ui": "^2.1.2",
     "rescript-material-ui-lab": "^2.1.2",
     "rollup-plugin-styles": "^3.14.1"

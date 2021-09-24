@@ -76,11 +76,17 @@ let useDumpedState = (): (config_set_t, config_set_t => unit) => {
 
     invoke_dump_state({dumped: conf_to_save})
     ->then(_ => {
-      Js.Console.info2("Dump selectors state:", conf_to_save)
+      %log.info(
+        "Dump selectors state:"
+        ("conf_to_save", conf_to_save)
+      )
       resolve()
     })
     ->catch(err => {
-      Js.Console.error(Api.promise_error_msg(err))
+      %log.error(
+        "Dump selectors state raise an exception"
+        ("Api.promise_error_msg(err)", Api.promise_error_msg(err))
+      )
       resolve()
     })
     ->ignore
@@ -90,7 +96,10 @@ let useDumpedState = (): (config_set_t, config_set_t => unit) => {
   React.useEffect1(() => {
     invoke_load_state()
     ->then((conf: Openocd.app_config_t) => {
-      Js.Console.info2("Load selectors state:", conf)
+      %log.info(
+        "Load selectors state:"
+        ("conf", conf)
+      )
 
       /* Turn empty config to option */
       let as_option = (conf: Openocd.config_t) => {
@@ -109,7 +118,10 @@ let useDumpedState = (): (config_set_t, config_set_t => unit) => {
       resolve()
     })
     ->catch(err => {
-      Js.Console.error(Api.promise_error_msg(err))
+      %log.error(
+        "Load selectors state raise an exception"
+        ("Api.promise_error_msg(err)", Api.promise_error_msg(err))
+      )
       resolve()
     })
     ->ignore
@@ -143,7 +155,10 @@ let useConfigLists = () => {
       resolve()
     })
     ->catch(err => {
-      Js.Console.error(Api.promise_error_msg(err))
+      %log.error(
+        "Exception raised on Effect: receive config lists"
+        ("Api.promise_error_msg(err)", Api.promise_error_msg(err))
+      )
       resolve()
     })
     ->ignore
