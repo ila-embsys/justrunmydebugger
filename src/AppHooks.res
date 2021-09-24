@@ -169,14 +169,14 @@ let useConfigLists = () => {
 }
 
 /// Subscribe to `notification` event and return notification_t object on event receive
-let useOpenocdNotification = (): option<Api.notification_t> => {
+let useOpenocdNotification = (): option<Api.Notification.t> => {
   // Convert JSON string to Api.notification_t
-  let toNotification = (json_string: string): option<Api.notification_t> => {
+  let toNotification = (json_string: string): option<Api.Notification.t> => {
     let json = Utils.Json.parse(json_string)
 
     switch json {
     | Some(json) => {
-        let decode_result = json->Jzon.decodeWith(Api.Codecs.notification)
+        let decode_result = json->Jzon.decodeWith(Api.Notification.codec)
 
         switch decode_result {
         | Ok(result) => Some(result)

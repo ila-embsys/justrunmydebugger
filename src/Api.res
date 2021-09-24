@@ -8,15 +8,41 @@ type config_lists_t = {
   targets: array<Openocd.config_t>,
 }
 
-type notification_t = {
-  level: int,
-  message: string,
-}
+module Notification = {
+  module Level = {
+    type t =
+      | Info
+      | Warn
+      | Error
+  }
 
-module Codecs = {
-  let notification = Jzon.object2(
-    ({level, message}) => (level, message),
-    ((level, message)) => {level, message}->Ok,
+  type t = {
+    level_num: int,
+    level: Level.t,
+    message: string,
+  }
+
+  let codec = Jzon.object2(
+    ({level_num, message}) => (level_num, message),
+    ((level_num, message)) => {
+      let level = switch level_num {
+      | 0 => Some(Level.Info)
+      | 1 => Some(Level.Warn)
+      | 2 => Some(Level.Error)
+      | _ => None
+      }
+
+      switch level {
+      | Some(level) => {level_num: level_num, message: message, level: level}->Ok
+      | _ =>
+        Error(
+          #UnexpectedJsonValue(
+            [],
+            `"level": expected a number 0..2, current is ${level_num->Js.Int.toString}`,
+          ),
+        )
+      }
+    },
     Jzon.field("level", Jzon.int),
     Jzon.field("message", Jzon.string),
   )
