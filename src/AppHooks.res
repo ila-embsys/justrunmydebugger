@@ -168,30 +168,12 @@ let useConfigLists = () => {
   config_lists
 }
 
-/// Subscribe to `notification` event and return notification_t object on event receive
+/// Subscribe to `notification` event and return Notification.t object on event receive
 let useOpenocdNotification = (): option<Api.Notification.t> => {
-  // Convert JSON string to Api.notification_t
-  let toNotification = (json_string: string): option<Api.Notification.t> => {
-    let json = Utils.Json.parse(json_string)
+  Api.ReactHooks.useTypedListen("notification", Api.Notification.codec)
+}
 
-    switch json {
-    | Some(json) => {
-        let decode_result = json->Jzon.decodeWith(Api.Notification.codec)
-
-        switch decode_result {
-        | Ok(result) => Some(result)
-        | Error(e) => {
-            %log.error(`Bad notification message: ${e->Jzon.DecodingError.toString}`)
-            None
-          }
-        }
-      }
-    | _ => None
-    }
-  }
-
-  // Subscribe to event
-  let notification = Api.ReactHooks.useTypedListen("notification", toNotification)
-
-  notification
+/// Subscribe to `openocd-event` event and return OpenocdEvent.t object on event receive
+let useOpenocdEvent = (): option<Api.OpenocdEvent.t> => {
+  Api.ReactHooks.useTypedListen("openocd-event", Api.OpenocdEvent.codec)
 }

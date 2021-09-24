@@ -59,6 +59,24 @@ module Notification = {
   )
 }
 
+/// Describe content of message of "openocd-event" tauri event
+module OpenocdEvent = {
+  module Kind = {
+    @deriving(jsConverter)
+    type t =
+      | @as(0) Start
+      | @as(1) Stop
+  }
+
+  type t = {event: Kind.t}
+
+  let codec = Jzon.object1(
+    ({event}) => event,
+    event => {event: event}->Ok,
+    Jzon.field("event", Utils.Json.Jzon.int_enum(Kind.tToJs, Kind.tFromJs)),
+  )
+}
+
 module ReactHooks = {
   open Promise
   open Belt_Option
@@ -90,15 +108,34 @@ module ReactHooks = {
   ///
   /// Arguments:
   ///   event — event subscribe to
-  ///   toPayloadType — converts string JSON to 'a
+  ///   codec — Jzon.codec which converts JSON to 'a
   ///
   /// Returns
   ///   event structure of type 'a or None, if conversion failed
-  let useTypedListen = (event: string, toPayloadType: string => option<'a>): option<'a> => {
+  let useTypedListen = (event: string, codec: Jzon.codec<'a>): option<'a> => {
     let (payload: option<'a>, setPayload) = React.useState(() => None)
 
+    let makeTyped = (json_string: string): option<'a> => {
+      let json = Utils.Json.parse(json_string)
+
+      switch json {
+      | Some(json) => {
+          let decode_result = json->Jzon.decodeWith(codec)
+
+          switch decode_result {
+          | Ok(result) => Some(result)
+          | Error(e) => {
+              %log.error(`Bad message payload: ${e->Jzon.DecodingError.toString}`)
+              None
+            }
+          }
+        }
+      | _ => None
+      }
+    }
+
     useListen(event, ~callback=e => {
-      setPayload(_ => toPayloadType(e.payload.message))
+      setPayload(_ => makeTyped(e.payload.message))
     })
 
     payload
