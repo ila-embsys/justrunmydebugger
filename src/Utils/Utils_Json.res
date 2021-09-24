@@ -20,10 +20,7 @@ let toObject = (obj: Js.Json.t): option<Js.Dict.t<Js.Json.t>> => {
 }
 
 let parse = (str: string): option<Js.Json.t> => {
-    try Some(Js.Json.parseExn(str)) catch {
-    | _ => {
-        Js.Console.error("Error parsing event JSON string")
-        None
-      }
-    }
+  try Some(Js.Json.parseExn(str)) catch {
+  | _ => None
+  }
 }

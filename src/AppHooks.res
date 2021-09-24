@@ -181,7 +181,7 @@ let useOpenocdNotification = (): option<Api.notification_t> => {
         switch decode_result {
         | Ok(result) => Some(result)
         | Error(e) => {
-            Js.Console.error(`Bad notification message: ${e->Jzon.DecodingError.toString}`)
+            %log.error(`Bad notification message: ${e->Jzon.DecodingError.toString}`)
             None
           }
         }
