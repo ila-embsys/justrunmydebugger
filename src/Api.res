@@ -8,44 +8,6 @@ type config_lists_t = {
   targets: array<Openocd.config_t>,
 }
 
-module Notification = {
-  module Level = {
-    type t =
-      | Info
-      | Warn
-      | Error
-  }
-
-  type t = {
-    level_num: int,
-    level: Level.t,
-    message: string,
-  }
-
-  let codec = Jzon.object2(
-    ({level_num, message}) => (level_num, message),
-    ((level_num, message)) => {
-      let level = switch level_num {
-      | 0 => Some(Level.Info)
-      | 1 => Some(Level.Warn)
-      | 2 => Some(Level.Error)
-      | _ => None
-      }
-
-      switch level {
-      | Some(level) => {level_num: level_num, message: message, level: level}->Ok
-      | _ =>
-        #UnexpectedJsonValue(
-          [],
-          `"level": expected a number 0..2, current is ${level_num->Js.Int.toString}`,
-        )->Error
-      }
-    },
-    Jzon.field("level", Jzon.int),
-    Jzon.field("message", Jzon.string),
-  )
-}
-
 let invoke_get_config_lists = (): Promise.t<config_lists_t> => Tauri.invoke("get_config_lists")
 
 let invoke_start = (cfgs: configs): Promise.t<string> => Tauri.invoke1("start", cfgs)
@@ -72,6 +34,29 @@ let promise_error_msg = (error: 'a): string => {
     }
   | _ => `Some unknown error: ${error_stringified}`
   }
+}
+
+/// Describe content of message of "notification" tauri event
+module Notification = {
+  module Level = {
+    @deriving(jsConverter)
+    type t =
+      | @as(0) Info
+      | @as(1) Warn
+      | @as(2) Error
+  }
+
+  type t = {
+    level: Level.t,
+    message: string,
+  }
+
+  let codec = Jzon.object2(
+    ({level, message}) => (level, message),
+    ((level, message)) => {message: message, level: level}->Ok,
+    Jzon.field("level", Utils.Json.Jzon.int_enum(Level.tToJs, Level.tFromJs)),
+    Jzon.field("message", Jzon.string),
+  )
 }
 
 module ReactHooks = {
