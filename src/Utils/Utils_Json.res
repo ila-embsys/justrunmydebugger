@@ -24,3 +24,21 @@ let parse = (str: string): option<Js.Json.t> => {
   | _ => None
   }
 }
+
+module Jzon = {
+  /// Return codec to convert encode/decode int enum
+  let int_enum = (enumToInt: 'a => int, intToEnum: int => option<'a>) =>
+    Jzon.custom(
+      x => Jzon.float->Jzon.encode(enumToInt(x)->Belt.Int.toFloat),
+      json =>
+        switch json->Js.Json.decodeNumber {
+        | Some(x) =>
+          switch x->Belt.Float.toInt->intToEnum {
+          | Some(x) => Ok(x)
+          | None =>
+            Error(#UnexpectedJsonType([], "int_enum (unexpected underlying enum value)", json))
+          }
+        | None => Error(#UnexpectedJsonType([], "string", json))
+        },
+    )
+}
