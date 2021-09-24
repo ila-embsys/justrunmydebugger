@@ -8,6 +8,11 @@ type config_lists_t = {
   targets: array<Openocd.config_t>,
 }
 
+type notification_t = {
+  level: int,
+  message: string,
+}
+
 let invoke_get_config_lists = (): Promise.t<config_lists_t> => Tauri.invoke("get_config_lists")
 
 let invoke_start = (cfgs: configs): Promise.t<string> => Tauri.invoke1("start", cfgs)
@@ -59,5 +64,25 @@ module ReactHooks = {
 
       unlisten
     }, (unlisten, event, cb))
+  }
+
+  /// Generic hook to recevice "typed" events
+  ///
+  /// Subscribe to event and try to convert event.payload.message to 'a on receive
+  ///
+  /// Arguments:
+  ///   event — event subscribe to
+  ///   toPayloadType — converts string JSON to 'a
+  ///
+  /// Returns
+  ///   event structure of type 'a or None, if conversion failed
+  let useTypedListen = (event: string, toPayloadType: string => option<'a>): option<'a> => {
+    let (payload: option<'a>, setPayload) = React.useState(() => None)
+
+    useListen(event, ~callback=e => {
+      setPayload(_ => toPayloadType(e.payload.message))
+    })
+
+    payload
   }
 }

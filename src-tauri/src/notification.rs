@@ -2,11 +2,12 @@ use tauri::Window;
 
 use crate::api;
 
-#[derive(Clone, serde::Serialize)]
+#[derive(Clone, serde_repr::Serialize_repr, serde_repr::Deserialize_repr)]
+#[repr(u8)]
 pub enum Level {
-    Info,
-    Warn,
-    Error,
+    Info = 0,
+    Warn = 1,
+    Error = 2,
 }
 
 #[derive(Clone, serde::Serialize)]
@@ -18,7 +19,7 @@ pub struct Notification {
 pub fn send(window: &Window, msg: &str, lvl: Level) {
     window
         .emit(
-            "event",
+            "notification",
             api::Payload {
                 message: serde_json::to_string(&Notification {
                     level: lvl,
