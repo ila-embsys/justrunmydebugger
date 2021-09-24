@@ -155,36 +155,21 @@ let useConfigLists = () => {
 
 /// Subscribe to `notification` event and return notification_t object on event receive
 let useOpenocdNotification = (): option<Api.notification_t> => {
-  open Belt_Option
-
   // Convert JSON string to Api.notification_t
   let toNotification = (json_string: string): option<Api.notification_t> => {
     let json = Utils.Json.parse(json_string)
 
     switch json {
     | Some(json) => {
-        let dict = Utils.Json.toObject(json)
+        let decode_result = json->Jzon.decodeWith(Api.Codecs.notification)
 
-        dict->flatMap(dict => {
-          let level =
-            dict
-            ->Js.Dict.get("level")
-            ->flatMap(level => Utils.Json.toInt(level))
-            ->map(level => level)
-
-          let message =
-            dict
-            ->Js.Dict.get("message")
-            ->flatMap(message => Utils.Json.toString(message))
-            ->map(message => message)
-
-          let event: option<Api.notification_t> = switch (level, message) {
-          | (Some(level), Some(message)) => Some({level: level, message: message})
-          | _ => None
+        switch decode_result {
+        | Ok(result) => Some(result)
+        | Error(e) => {
+            Js.Console.error(`Bad notification message: ${e->Jzon.DecodingError.toString}`)
+            None
           }
-
-          event
-        })
+        }
       }
     | _ => None
     }

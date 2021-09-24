@@ -13,6 +13,15 @@ type notification_t = {
   message: string,
 }
 
+module Codecs = {
+  let notification = Jzon.object2(
+    ({level, message}) => (level, message),
+    ((level, message)) => {level, message}->Ok,
+    Jzon.field("level", Jzon.int),
+    Jzon.field("message", Jzon.string),
+  )
+}
+
 let invoke_get_config_lists = (): Promise.t<config_lists_t> => Tauri.invoke("get_config_lists")
 
 let invoke_start = (cfgs: configs): Promise.t<string> => Tauri.invoke1("start", cfgs)
