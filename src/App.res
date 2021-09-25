@@ -41,7 +41,7 @@ let make = () => {
   let (tab_index, tabChangeHandler) = MaterialUiUtils.Hooks.useMaterialUiTabIndex()
 
   let (is_started, set_is_started) = React.useState(() => false)
-
+  
   /* Start OpenOCD process on backend with selected configs */
   let start = (~with_interface: bool) => {
     open Belt_Array

@@ -167,3 +167,13 @@ let useConfigLists = () => {
 
   config_lists
 }
+
+/// Subscribe to `notification` event and return Notification.t object on event receive
+let useOpenocdNotification = (): option<Api.Notification.t> => {
+  Api.ReactHooks.useTypedListen("notification", Api.Notification.codec)
+}
+
+/// Subscribe to `openocd-event` event and return OpenocdEvent.t object on event receive
+let useOpenocdEvent = (): option<Api.OpenocdEvent.t> => {
+  Api.ReactHooks.useTypedListen("openocd-event", Api.OpenocdEvent.codec)
+}

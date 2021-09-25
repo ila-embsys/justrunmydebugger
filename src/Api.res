@@ -36,6 +36,47 @@ let promise_error_msg = (error: 'a): string => {
   }
 }
 
+/// Describe content of message of "notification" tauri event
+module Notification = {
+  module Level = {
+    @deriving(jsConverter)
+    type t =
+      | @as(0) Info
+      | @as(1) Warn
+      | @as(2) Error
+  }
+
+  type t = {
+    level: Level.t,
+    message: string,
+  }
+
+  let codec = Jzon.object2(
+    ({level, message}) => (level, message),
+    ((level, message)) => {message: message, level: level}->Ok,
+    Jzon.field("level", Utils.Json.Jzon.int_enum(Level.tToJs, Level.tFromJs)),
+    Jzon.field("message", Jzon.string),
+  )
+}
+
+/// Describe content of message of "openocd-event" tauri event
+module OpenocdEvent = {
+  module Kind = {
+    @deriving(jsConverter)
+    type t =
+      | @as(0) Start
+      | @as(1) Stop
+  }
+
+  type t = {event: Kind.t}
+
+  let codec = Jzon.object1(
+    ({event}) => event,
+    event => {event: event}->Ok,
+    Jzon.field("event", Utils.Json.Jzon.int_enum(Kind.tToJs, Kind.tFromJs)),
+  )
+}
+
 module ReactHooks = {
   open Promise
   open Belt_Option
@@ -59,5 +100,44 @@ module ReactHooks = {
 
       unlisten
     }, (unlisten, event, cb))
+  }
+
+  /// Generic hook to recevice "typed" events
+  ///
+  /// Subscribe to event and try to convert event.payload.message to 'a on receive
+  ///
+  /// Arguments:
+  ///   event — event subscribe to
+  ///   codec — Jzon.codec which converts JSON to 'a
+  ///
+  /// Returns
+  ///   event structure of type 'a or None, if conversion failed
+  let useTypedListen = (event: string, codec: Jzon.codec<'a>): option<'a> => {
+    let (payload: option<'a>, setPayload) = React.useState(() => None)
+
+    let makeTyped = (json_string: string): option<'a> => {
+      let json = Utils.Json.parse(json_string)
+
+      switch json {
+      | Some(json) => {
+          let decode_result = json->Jzon.decodeWith(codec)
+
+          switch decode_result {
+          | Ok(result) => Some(result)
+          | Error(e) => {
+              %log.error(`Bad message payload: ${e->Jzon.DecodingError.toString}`)
+              None
+            }
+          }
+        }
+      | _ => None
+      }
+    }
+
+    useListen(event, ~callback=e => {
+      setPayload(_ => makeTyped(e.payload.message))
+    })
+
+    payload
   }
 }
