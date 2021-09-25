@@ -19,6 +19,7 @@
         "rescript-material-ui",
         "rescript-material-ui-lab",
         "@ryyppy/rescript-promise",
+        "rescript-jzon",
         "rescript-logger"
    ],
    "ppx-flags": ["rescript-logger/ppx"]

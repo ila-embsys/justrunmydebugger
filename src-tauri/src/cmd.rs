@@ -3,17 +3,13 @@ use std::io::{BufRead, BufReader};
 use std::sync::{Arc, Mutex};
 use tauri::Window;
 
+use crate::api;
 use crate::config::AppConfig;
-use crate::openocd::config::{Config, ConfigsSet};
-use crate::openocd::proc as openocd;
-use crate::state::State;
 use crate::error::ErrorMsg;
-
-#[derive(Clone, serde::Serialize)]
-struct Payload {
-    message: String,
-}
-
+use crate::notification;
+use crate::openocd::config::{Config, ConfigsSet};
+use crate::openocd::{event as openocd_event, proc as openocd};
+use crate::state::State;
 
 /// Return a struct with three lists of `Config`
 ///
@@ -31,7 +27,7 @@ pub fn get_config_lists() -> Result<ConfigsSet, ErrorMsg> {
 /// Return error string if something gone wrong.
 ///
 #[tauri::command]
-pub fn kill(state: tauri::State<State>) -> Result<String, ErrorMsg> {
+pub fn kill(state: tauri::State<State>, window: Window) -> Result<String, ErrorMsg> {
     let res = state
         .openocd_proc
         .lock()
@@ -49,7 +45,10 @@ pub fn kill(state: tauri::State<State>) -> Result<String, ErrorMsg> {
 
     match res {
         Some(err) => Err(err.into()),
-        None => Ok("".into()),
+        None => {
+            openocd_event::send(&window, openocd_event::Kind::Stop);
+            Ok("OpenOCD stopped".into())
+        }
     }
 }
 
@@ -78,7 +77,11 @@ pub fn kill(state: tauri::State<State>) -> Result<String, ErrorMsg> {
 /// ```
 ///
 #[tauri::command]
-pub fn start(configs: Vec<Config>, state: tauri::State<State>, window: Window) -> Result<String, ErrorMsg> {
+pub fn start(
+    configs: Vec<Config>,
+    state: tauri::State<State>,
+    window: Window,
+) -> Result<String, ErrorMsg> {
     info!(
         r#"Start openocd with configs: "{:?}""#,
         configs
@@ -106,6 +109,9 @@ pub fn start(configs: Vec<Config>, state: tauri::State<State>, window: Window) -
                     let reader = BufReader::new(stderr);
 
                     info!("OpenOCD started!");
+                    notification::send(&window, "OpenOCD started!", notification::Level::Info);
+                    openocd_event::send(&window, openocd_event::Kind::Start);
+
                     reader
                         .lines()
                         .filter_map(|line| line.ok())
@@ -113,14 +119,20 @@ pub fn start(configs: Vec<Config>, state: tauri::State<State>, window: Window) -
                             window
                                 .emit(
                                     "openocd-output",
-                                    Payload {
+                                    api::Payload {
                                         message: format!("{}\n", line),
                                     },
                                 )
-                                .unwrap();
+                                .unwrap_or_else(|e| {
+                                    error!("Error occurred while OpenOCD running: {}", e);
+                                });
+
                             info!("-- {}", line);
                         });
+
                     warn!("OpenOCD stopped!");
+                    notification::send(&window, "OpenOCD stopped!", notification::Level::Warn);
+                    openocd_event::send(&window, openocd_event::Kind::Stop);
                 }
             });
 
