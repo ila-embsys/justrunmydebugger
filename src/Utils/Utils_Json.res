@@ -36,7 +36,15 @@ module Jzon = {
           switch x->Belt.Float.toInt->intToEnum {
           | Some(x) => Ok(x)
           | None =>
-            Error(#UnexpectedJsonType([], "int_enum (unexpected underlying enum value)", json))
+            Error(
+              #UnexpectedJsonType(
+                [],
+                `int_enum (unexpected underlying enum value: ${x
+                  ->Belt.Float.toInt
+                  ->Js.Int.toString})`,
+                json,
+              ),
+            )
           }
         | None => Error(#UnexpectedJsonType([], "string", json))
         },
