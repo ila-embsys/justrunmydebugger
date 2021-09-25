@@ -26,7 +26,7 @@ let parse = (str: string): option<Js.Json.t> => {
 }
 
 module Jzon = {
-  /// Return codec to convert encode/decode int enum
+  /// Return codec to encode/decode int enum
   let int_enum = (enumToInt: 'a => int, intToEnum: int => option<'a>) =>
     Jzon.custom(
       x => Jzon.float->Jzon.encode(enumToInt(x)->Belt.Int.toFloat),
