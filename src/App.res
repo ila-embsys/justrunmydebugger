@@ -2,6 +2,11 @@ open Api
 open AppHooks
 open AppTypes
 
+let notificationAnchor = {
+  open Notistack
+  AnchorOrigin.make(~horizontal={Horizontal.right}, ~vertical={Vertical.bottom}, ())
+}
+
 /// Component to render OpenOCD output
 ///
 /// Accept openocd output string as a child. Render
@@ -173,27 +178,30 @@ let make = () => {
 
   /* Render: app interface */
   <>
-    <Grid container=true spacing=#V1 alignItems=#Stretch>
-      <Grid item=true xs={Grid.Xs._3}>
-        <Paper variant=#Outlined>
-          <Tabs orientation=#Vertical onChange=tabChangeHandler value={tab_index->Any}>
-            <Tab label={"A predefined Board"->React.string} />
-            <Tab label={"A Target with an Interface"->React.string} />
-          </Tabs>
-        </Paper>
+    <Notistack.SnackbarProvider anchorOrigin=notificationAnchor>
+      <Grid container=true spacing=#V1 alignItems=#Stretch>
+        <Grid item=true xs={Grid.Xs._3}>
+          <Paper variant=#Outlined>
+            <Tabs orientation=#Vertical onChange=tabChangeHandler value={tab_index->Any}>
+              <Tab label={"A predefined Board"->React.string} />
+              <Tab label={"A Target with an Interface"->React.string} />
+            </Tabs>
+          </Paper>
+        </Grid>
+        <Grid item=true xs={Grid.Xs._9}>
+          <Card elevation={MaterialUi_Types.Number.int(3)}>
+            <CardContent>
+              <TabContent currentIndex=tab_index tabIndex=0> {tab_board} </TabContent>
+              <TabContent currentIndex=tab_index tabIndex=1> {tab_target} </TabContent>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item=true xs={Grid.Xs._12} />
       </Grid>
-      <Grid item=true xs={Grid.Xs._9}>
-        <Card elevation={MaterialUi_Types.Number.int(3)}>
-          <CardContent>
-            <TabContent currentIndex=tab_index tabIndex=0> {tab_board} </TabContent>
-            <TabContent currentIndex=tab_index tabIndex=1> {tab_target} </TabContent>
-          </CardContent>
-        </Card>
-      </Grid>
-      <Grid item=true xs={Grid.Xs._12} />
-    </Grid>
-    <Paper elevation={MaterialUi_Types.Number.int(0)}>
-      <OpenocdOutput> openocd_output </OpenocdOutput>
-    </Paper>
+      <Paper elevation={MaterialUi_Types.Number.int(0)}>
+        <OpenocdOutput> openocd_output </OpenocdOutput>
+      </Paper>
+      <SnackbarOpenocdMessages />
+    </Notistack.SnackbarProvider>
   </>
 }

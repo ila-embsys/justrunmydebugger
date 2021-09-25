@@ -42,6 +42,7 @@
     "@tauri-apps/api": "^1.0.0-beta.6",
     "bs-platform": "^9.0.2",
     "cross-env": "^7.0.3",
+    "notistack": "^1.0.10",
     "react": "^16.8.1",
     "react-dom": "^16.8.1",
     "rescript-logger": "^2.0.0",
