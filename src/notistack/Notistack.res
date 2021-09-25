@@ -1,29 +1,64 @@
-type snackbarKey =
-  | Name(string)
-  | Number(int)
-
-type optionsObject = {
-  key: option<snackbarKey>,
-  persist: option<bool>,
+module SnackbarKey = {
+  type t =
+    | String(string)
+    | Id(int)
 }
 
-type snackbarMessageMsgJsx = React.element
-type snackbarMessageMsgString = string
-
-type providerContextMsgJsx = {
-  enqueueSnackbar: (
-    ~message: snackbarMessageMsgJsx,
-    ~options: option<optionsObject>,
-  ) => snackbarKey,
-  closeSnackbar: (~key: option<snackbarKey>) => unit,
+module SnackbarMessage = {
+  type t = React.element
 }
 
-type providerContextMsgString = {
-  enqueueSnackbar: (
-    ~message: snackbarMessageMsgString,
-    ~options: option<optionsObject>,
-  ) => snackbarKey,
-  closeSnackbar: (~key: option<snackbarKey>) => unit,
+module VariantType = {
+  type t = [#default | #error | #success | #warning | #info]
+}
+
+module SnackbarContentCallback = {
+  type t =
+    | Jsx(React.element)
+    | Func((~key: SnackbarKey.t, ~message: SnackbarMessage.t) => React.element)
+}
+
+module SnackbarAction = {
+  type t =
+    | Jsx(React.element)
+    | Func((~key: SnackbarKey.t) => React.element)
+}
+
+module OptionsObject = {
+  type t = {
+    key: option<SnackbarKey.t>,
+    persist: option<bool>,
+    variant: option<VariantType.t>,
+    preventDuplicate: option<bool>,
+    content: option<SnackbarContentCallback.t>,
+    action: option<SnackbarAction.t>,
+  }
+
+  let default: t = {
+    variant: None,
+    key: None,
+    persist: None,
+    preventDuplicate: None,
+    content: None,
+    action: None,
+  }
+}
+
+module SnackbarMessageMsgJsx = {
+  type t = React.element
+}
+module SnackbarMessageMsgString = {
+  type t = string
+}
+
+module ProviderContext = {
+  type t = {
+    enqueueSnackbar: (
+      ~message: SnackbarMessage.t,
+      ~options: option<OptionsObject.t>,
+    ) => SnackbarKey.t,
+    closeSnackbar: (~key: option<SnackbarKey.t>) => unit,
+  }
 }
 
 module Horizontal: {
@@ -84,7 +119,4 @@ module SnackbarProvider = {
 }
 
 @module("notistack")
-external useSnackbarMsgJsx: unit => providerContextMsgJsx = "useSnackbar"
-
-@module("notistack")
-external useSnackbarMsgString: unit => providerContextMsgString = "useSnackbar"
+external useSnackbar: unit => ProviderContext.t = "useSnackbar"
