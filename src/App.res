@@ -115,7 +115,6 @@ let make = () => {
   let notify = AppHooks.useOpenocdEvent()
 
   React.useEffect1(() => {
-    Js.Console.log(notify)
     switch notify {
     | Some(val) => switch val.event {
       | Start => set_is_started(_ => true)
@@ -188,7 +187,7 @@ let make = () => {
 
   /* Render: app interface */
   <>
-    <Notistack.SnackbarProvider anchorOrigin=notificationAnchor>
+    <Notistack.SnackbarProvider anchorOrigin=notificationAnchor autoHideDuration={2000}>
       <Grid container=true spacing=#V1 alignItems=#Stretch>
         <Grid item=true xs={Grid.Xs._3}>
           <Paper variant=#Outlined>
