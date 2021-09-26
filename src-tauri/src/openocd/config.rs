@@ -1,6 +1,8 @@
+use lazy_static::lazy_static;
 #[cfg_attr(unix, allow(unused_imports))]
 use regex::Regex;
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 use std::convert::TryFrom;
 use std::option::Option;
 use std::path::{Path, PathBuf};
@@ -182,13 +184,15 @@ impl OpenocdPaths {
         let mut root_iter = WalkDir::new(openocd_path)
             .into_iter()
             .flatten()
-            .filter_map(|entry| {
-                let name = entry.path().file_name()?.to_string_lossy().to_string();
-                if name == "scripts" {
-                    Some(entry)
-                } else {
-                    None
-                }
+            .filter(|scripts| {
+                let scripts_dir_name: String = scripts
+                    .path()
+                    .file_name()
+                    .unwrap_or_else(|| panic!(r#"Bad scrips path: "{}""#, scripts.path().display()))
+                    .to_string_lossy()
+                    .to_string();
+
+                scripts_dir_name == "scripts" && Self::validate_scripts(scripts.path())
             });
 
         Some(root_iter.next()?.into_path())
@@ -197,6 +201,33 @@ impl OpenocdPaths {
     #[cfg_attr(unix, allow(dead_code))]
     fn validate_root(root: &Path) -> bool {
         Self::scripts(root).is_some()
+    }
+
+    #[cfg_attr(unix, allow(dead_code))]
+    fn validate_scripts(scripts: &Path) -> bool {
+        lazy_static! {
+            static ref REQUIRED_DIRS: HashSet<String> = vec!["board", "interface", "target"]
+                .into_iter()
+                .map(String::from)
+                .collect();
+        }
+
+        let found_dirs: HashSet<String> = WalkDir::new(scripts)
+            .max_depth(1)
+            .into_iter()
+            .flatten()
+            .filter_map(|dir: walkdir::DirEntry| {
+                let dir_name = dir.path().file_name()?.to_string_lossy().to_string();
+
+                if REQUIRED_DIRS.contains(&dir_name) {
+                    Some(dir_name)
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        found_dirs == *REQUIRED_DIRS
     }
 
     #[cfg_attr(unix, allow(dead_code))]
