@@ -181,19 +181,19 @@ impl OpenocdPaths {
     }
 
     fn scripts(openocd_path: &Path) -> Option<PathBuf> {
-        let mut root_iter = WalkDir::new(openocd_path)
-            .into_iter()
-            .flatten()
-            .filter(|scripts| {
-                let scripts_dir_name: String = scripts
-                    .path()
-                    .file_name()
-                    .unwrap_or_else(|| panic!(r#"Bad scrips path: "{}""#, scripts.path().display()))
-                    .to_string_lossy()
-                    .to_string();
+        let mut root_iter =
+            WalkDir::new(openocd_path)
+                .into_iter()
+                .flatten()
+                .filter_map(|scripts| {
+                    let dir_name = scripts.path().file_name()?.to_string_lossy().to_string();
 
-                scripts_dir_name == "scripts" && Self::validate_scripts(scripts.path())
-            });
+                    if dir_name == "scripts" && Self::validate_scripts(scripts.path()) {
+                        Some(scripts)
+                    } else {
+                        None
+                    }
+                });
 
         Some(root_iter.next()?.into_path())
     }
