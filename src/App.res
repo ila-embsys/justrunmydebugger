@@ -2,6 +2,11 @@ open Api
 open AppHooks
 open AppTypes
 
+let notificationAnchor = {
+  open Notistack
+  AnchorOrigin.make(~horizontal={Horizontal.right}, ~vertical={Vertical.bottom}, ())
+}
+
 /// Component to render OpenOCD output
 ///
 /// Accept openocd output string as a child. Render
@@ -41,7 +46,7 @@ let make = () => {
   let (tab_index, tabChangeHandler) = MaterialUiUtils.Hooks.useMaterialUiTabIndex()
 
   let (is_started, set_is_started) = React.useState(() => false)
-  
+
   /* Start OpenOCD process on backend with selected configs */
   let start = (~with_interface: bool) => {
     open Belt_Array
@@ -84,8 +89,6 @@ let make = () => {
         resolve()
       })
       ->ignore
-
-      set_is_started(_ => true)
     }
   }
 
@@ -107,9 +110,20 @@ let make = () => {
       resolve()
     })
     ->ignore
-
-    set_is_started(_ => false)
   }
+
+  let notify = AppHooks.useOpenocdEvent()
+
+  React.useEffect1(() => {
+    switch notify {
+    | Some(val) => switch val.event {
+      | Start => set_is_started(_ => true)
+      | Stop => set_is_started(_ => false)
+      }
+    | None => ()
+    }
+    None
+  }, [notify])
 
   // Tab with board selector
   let tab_board =
@@ -173,27 +187,30 @@ let make = () => {
 
   /* Render: app interface */
   <>
-    <Grid container=true spacing=#V1 alignItems=#Stretch>
-      <Grid item=true xs={Grid.Xs._3}>
-        <Paper variant=#Outlined>
-          <Tabs orientation=#Vertical onChange=tabChangeHandler value={tab_index->Any}>
-            <Tab label={"A predefined Board"->React.string} />
-            <Tab label={"A Target with an Interface"->React.string} />
-          </Tabs>
-        </Paper>
+    <Notistack.SnackbarProvider anchorOrigin=notificationAnchor autoHideDuration={2000}>
+      <Grid container=true spacing=#V1 alignItems=#Stretch>
+        <Grid item=true xs={Grid.Xs._3}>
+          <Paper variant=#Outlined>
+            <Tabs orientation=#Vertical onChange=tabChangeHandler value={tab_index->Any}>
+              <Tab label={"A predefined Board"->React.string} />
+              <Tab label={"A Target with an Interface"->React.string} />
+            </Tabs>
+          </Paper>
+        </Grid>
+        <Grid item=true xs={Grid.Xs._9}>
+          <Card elevation={MaterialUi_Types.Number.int(3)}>
+            <CardContent>
+              <TabContent currentIndex=tab_index tabIndex=0> {tab_board} </TabContent>
+              <TabContent currentIndex=tab_index tabIndex=1> {tab_target} </TabContent>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item=true xs={Grid.Xs._12} />
       </Grid>
-      <Grid item=true xs={Grid.Xs._9}>
-        <Card elevation={MaterialUi_Types.Number.int(3)}>
-          <CardContent>
-            <TabContent currentIndex=tab_index tabIndex=0> {tab_board} </TabContent>
-            <TabContent currentIndex=tab_index tabIndex=1> {tab_target} </TabContent>
-          </CardContent>
-        </Card>
-      </Grid>
-      <Grid item=true xs={Grid.Xs._12} />
-    </Grid>
-    <Paper elevation={MaterialUi_Types.Number.int(0)}>
-      <OpenocdOutput> openocd_output </OpenocdOutput>
-    </Paper>
+      <Paper elevation={MaterialUi_Types.Number.int(0)}>
+        <OpenocdOutput> openocd_output </OpenocdOutput>
+      </Paper>
+      <SnackbarOpenocdMessages />
+    </Notistack.SnackbarProvider>
   </>
 }
