@@ -99,6 +99,7 @@ module SnackbarProvider = {
     ~dense: React.element=?,
     ~maxSnack: React.element=?,
     ~hideIconVariant: React.element=?,
+    ~autoHideDuration: int=?,
     unit,
   ) => {
     "children": option<React.element>,
@@ -106,6 +107,7 @@ module SnackbarProvider = {
     "dense": option<React.element>,
     "maxSnack": option<React.element>,
     "hideIconVariant": option<React.element>,
+    "autoHideDuration": option<int>
   } = ""
 
   @module("notistack")
@@ -115,6 +117,7 @@ module SnackbarProvider = {
     "dense": option<React.element>,
     "maxSnack": option<React.element>,
     "hideIconVariant": option<React.element>,
+    "autoHideDuration": option<int>
   }> = "SnackbarProvider"
 }
 
