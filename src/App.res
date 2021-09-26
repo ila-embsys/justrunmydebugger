@@ -46,7 +46,7 @@ let make = () => {
   let (tab_index, tabChangeHandler) = MaterialUiUtils.Hooks.useMaterialUiTabIndex()
 
   let (is_started, set_is_started) = React.useState(() => false)
-  
+
   /* Start OpenOCD process on backend with selected configs */
   let start = (~with_interface: bool) => {
     open Belt_Array
@@ -89,8 +89,6 @@ let make = () => {
         resolve()
       })
       ->ignore
-
-      set_is_started(_ => true)
     }
   }
 
@@ -112,9 +110,21 @@ let make = () => {
       resolve()
     })
     ->ignore
-
-    set_is_started(_ => false)
   }
+
+  let notify = AppHooks.useOpenocdEvent()
+
+  React.useEffect1(() => {
+    Js.Console.log(notify)
+    switch notify {
+    | Some(val) => switch val.event {
+      | Start => set_is_started(_ => true)
+      | Stop => set_is_started(_ => false)
+      }
+    | None => ()
+    }
+    None
+  }, [notify])
 
   // Tab with board selector
   let tab_board =
