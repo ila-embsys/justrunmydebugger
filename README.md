@@ -1,4 +1,7 @@
-# Just Run My Debugger!
+<p align="center">
+  <img src="src-tauri/icons/128x128@2x.png" />
+</p>
+<center> <h1>Just Run My Debugger!</h1> </center>
 
 This tool is a GUI for easy start and use OpenOCD. Built with Rust and Rescript
 by very beginners of the both languages.
