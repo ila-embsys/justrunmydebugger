@@ -24,8 +24,8 @@
       "externalBin": [],
       "copyright": "",
       "category": "DeveloperTool",
-      "shortDescription": "",
-      "longDescription": "",
+      "shortDescription": "Just Run My Debugger!",
+      "longDescription": "This tool is a GUI for easy start and use OpenOCD. Built with Rust and Rescript by very beginners of the both languages.",
       "deb": {
         "depends": [],
         "useBootstrapper": false
