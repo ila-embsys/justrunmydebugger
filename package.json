@@ -1,6 +1,6 @@
 {
   "name": "justrunmydebugger",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "main": "index.html",
   "author": "ila",
   "license": "GPL-3.0-or-later",
@@ -14,10 +14,11 @@
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build -d",
     "tauri:build:prod": "tauri build",
-    "start": "run-p re:start rollup:watch tauri:dev",
-    "start:no-rewatch": "run-p rollup:watch tauri:dev",
-    "build": "run-s re:build:debug rollup:build tauri:build",
-    "build:prod": "run-s re:build:prod rollup:build tauri:build:prod"
+    "genversion": "genversion --es6 src/version.js",
+    "start": "run-p genversion re:start rollup:watch tauri:dev",
+    "start:no-rewatch": "run-p genversion rollup:watch tauri:dev",
+    "build": "run-s genversion re:build:debug rollup:build tauri:build",
+    "build:prod": "run-s genversion re:build:prod rollup:build tauri:build:prod"
   },
   "devDependencies": {
     "@material-ui/core": "^4.12.3",
@@ -41,6 +42,7 @@
     "@ryyppy/rescript-promise": "^2.1.0",
     "@tauri-apps/api": "^1.0.0-beta.6",
     "bs-platform": "^9.0.2",
+    "genversion": "^3.0.1",
     "notistack": "^1.0.10",
     "react": "^16.8.1",
     "react-dom": "^16.8.1",
