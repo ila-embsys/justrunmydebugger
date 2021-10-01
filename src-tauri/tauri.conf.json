@@ -6,7 +6,7 @@
   "build": {
     "distDir": "../dist",
     "devPath": "http://localhost:10001/",
-    "beforeDevCommand": "", 
+    "beforeDevCommand": "",
     "beforeBuildCommand": ""
   },
   "tauri": {
@@ -45,10 +45,14 @@
       }
     },
     "updater": {
-      "active": false
+      "active": true,
+      "endpoints": [
+        "https://raw.githubusercontent.com/ila-embsys/justrunmydebugger/master/.tauri/update/{{target}}/latest.json"
+      ],
+      "dialog": true,
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IERCNTBBRjE1NUZBRDIyMgpSV1FpMHZwVjhRcTFEVVNJR3M2SWtleUZxZWkra3hBTWlGYUlmSkVDOHF5b3BmRGpxTGw1clB1Sgo="
     },
-    "allowlist": {
-    },
+    "allowlist": {},
     "windows": [
       {
         "title": "justrunmydebugger",
