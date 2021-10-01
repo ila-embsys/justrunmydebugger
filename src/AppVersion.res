@@ -6,9 +6,9 @@ let make = () => {
     ~position="fixed",
     ~bottom="0",
     ~right="0",
-    ~color="#DDD",
+    ~color="#AAA",
     ~margin="1em",
-    ~size="---",
+    ~fontSize="0.8em",
     (),
   )
 
