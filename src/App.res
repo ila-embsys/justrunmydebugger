@@ -212,5 +212,6 @@ let make = () => {
       </Paper>
       <SnackbarOpenocdMessages />
     </Notistack.SnackbarProvider>
+    <AppVersion />
   </>
 }
