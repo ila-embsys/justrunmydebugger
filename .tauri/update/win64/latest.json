@@ -1,7 +1,8 @@
 {
     "name":"v0.1.0",
     "notes":"An updater has been added",
-    "pub_date":"2021-10-02T02:29:00Z",
-    "signature":"dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUldRaTB2cFY4UXExRGV2QXdlV3JtZEc4VFQ5MFl1VWxnQ2RGL25FYXJBWHBXT0hFRWljR0lSQy91bjJEUEhyOVlEcTFnZHhVb0JkMndqd3FTUEg2SmV5RzVDUTNvSG11RFF3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNjMzMDQzMjQ5CWZpbGU6QzpcZGV2XGp1c3RydW5teWRlYnVnZ2VyMlxzcmMtdGF1cmlcdGFyZ2V0XHJlbGVhc2VcYnVuZGxlL21zaS9qdXN0cnVubXlkZWJ1Z2dlcl8wLjEuMF94NjQubXNpLnppcApMancrSGsxajNwemdWbEpNWW42a0Q0dlZTbWxjdFI3ZHVTUEZUNythb0M2VWx5bDBOODlTSXc2NWtTTzlCYktST3I1Y2RCMndCeS9iYS9qTFlRZlNBZz09Cg===",
-    "url":"https://github.com/ila-embsys/justrunmydebugger/releases/download/v0.1.0/justrunmydebugger-bundle-release-windows-latest-msi.zip"
+    "pub_date":"2021-10-02T03:27:00Z",
+    "signature":"dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUldRaTB2cFY4UXExRFRCWjRHODFYUUNZVE1xV01iaVlmWDNGSStiM1NqNmk2OWlWNlNhSkR5TXp1NVBZbm54eXpST3BkcFlQMHlQUWU1MWxsZDl5QkpndE5zV3NreEhPNmdBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNjMzMTMzODE0CWZpbGU6RDpcYVxqdXN0cnVubXlkZWJ1Z2dlclxqdXN0cnVubXlkZWJ1Z2dlclxzcmMtdGF1cmlcdGFyZ2V0XHJlbGVhc2VcYnVuZGxlL21zaS9qdXN0cnVubXlkZWJ1Z2dlcl8wLjEuMF94NjQubXNpLnppcApFMkJ4anFXYXhFNGdzZmJHUENlaWZuRVdZc29BdEIvT2RlWGpqNzVVdStHNTg0WTJubHVsV0lsOUczNVovWHBiREhWQkJJQWxtTklDT0VWaW9HQmdCZz09Cg==",
+    "url":"https://github.com/ila-embsys/justrunmydebugger/releases/download/v0.1.0-rc.1/justrunmydebugger_0.1.0_x64.msi.zip"
+    
 }
