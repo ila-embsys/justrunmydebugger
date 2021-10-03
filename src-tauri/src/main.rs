@@ -3,17 +3,16 @@
     windows_subsystem = "windows"
 )]
 
-use std::sync::Arc;
-use std::sync::Mutex;
-use threadpool::ThreadPool;
-
+mod api;
+mod app;
 mod cmd;
 mod config;
-mod openocd;
-mod state;
 mod error;
 mod notification;
-mod api;
+mod openocd;
+mod state;
+
+use crate::app::App;
 
 fn main() {
     ::std::env::set_var("RUST_LOG", "debug");
@@ -21,8 +20,7 @@ fn main() {
 
     tauri::Builder::default()
         .manage(state::State {
-            openocd_workers: Mutex::new(ThreadPool::new(1)),
-            openocd_proc: Arc::new(Mutex::new(None)),
+            app: App::new(),
         })
         // This is where you pass in your commands
         .invoke_handler(tauri::generate_handler![
