@@ -2,9 +2,9 @@ use std::convert::TryInto;
 use std::option::Option;
 use std::path::Path;
 use std::process::{Child, Command, Stdio};
+use std::result::Result;
 use sysinfo::{ProcessExt, Signal, System, SystemExt};
 use which::which;
-use std::result::Result;
 
 use crate::openocd::config::Config;
 
@@ -62,7 +62,8 @@ pub fn start_exec(exe_path: &Path, args: Vec<String>) -> Option<String> {
 }
 
 pub fn kill_proc(proc: &mut Child) -> bool {
-    let openocd_pid: usize = proc.id().try_into().unwrap();
+    // Convert all PIDs to unix format
+    let openocd_pid: i32 = proc.id().try_into().unwrap();
 
     let mut system = System::new();
     system.refresh_all();
@@ -72,6 +73,9 @@ pub fn kill_proc(proc: &mut Child) -> bool {
     for process in system.processes().values() {
         if process.name().contains("openocd") {
             if let Some(parent_pid) = process.parent() {
+                // Convert all PIDs to unix format
+                let parent_pid: i32 = parent_pid.try_into().unwrap();
+
                 if parent_pid == openocd_pid {
                     return process.kill(Signal::Kill);
                 }
