@@ -17,16 +17,14 @@ pub struct Notification {
 }
 
 pub fn send(window: &Window, msg: &str, lvl: Level) {
-    window
-        .emit(
-            "notification",
-            api::Payload {
-                message: serde_json::to_string(&Notification {
-                    level: lvl,
-                    message: msg.into(),
-                })
-                .expect("Fail to serialize event!"),
-            },
-        )
-        .expect("Fail to send event!");
+    api::send_raw(
+        window,
+        "notification",
+        serde_json::to_string(&Notification {
+            level: lvl,
+            message: msg.into(),
+        })
+        .expect("Fail to serialize event!")
+        .as_str(),
+    );
 }

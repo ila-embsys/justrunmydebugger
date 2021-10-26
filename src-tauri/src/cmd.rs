@@ -23,7 +23,7 @@ pub fn get_config_lists(state: tauri::State<State>) -> Result<ConfigsSet, ErrorM
 ///
 #[tauri::command]
 pub fn kill(state: tauri::State<State>, window: Window) -> Result<String, ErrorMsg> {
-    state.app.lock().unwrap().kill(window)
+    state.app.lock().unwrap().kill(&window)
 }
 
 /// Start openocd as process with provided configs as args
