@@ -93,22 +93,15 @@ impl App {
     /// Return error string if something gone wrong.
     ///
     pub fn kill(&self, window: &Window) -> Result<String, ErrorMsg> {
-        let res = self
-            .openocd_proc
-            .lock()
-            .unwrap()
-            .as_mut()
-            .and_then(|proc| {
-                if proc.lock().unwrap().kill().is_err() {
-                    error!("OpenOCD was not killed!");
-                    Some("OpenOCD was not killed!")
-                } else {
-                    info!("OpenOCD killed.");
-                    // let r = proc.lock().unwrap().try_wait();
-                    // println!("{:?}", r.expect("").unwrap());
-                    None
-                }
-            });
+        let res: Option<&str> = self.openocd_proc.lock().unwrap().as_mut().and_then(|proc| {
+            if !openocd::kill_proc(&mut proc.lock().unwrap()) {
+                error!("OpenOCD was not killed!");
+                Some("OpenOCD was not killed!")
+            } else {
+                info!("OpenOCD killed.");
+                None
+            }
+        });
 
         match res {
             Some(err) => Err(err.into()),
