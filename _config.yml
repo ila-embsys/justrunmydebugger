@@ -1,3 +1,7 @@
 theme: jekyll-theme-minimal
 logo: /docs/assets/images/logo.png
 show_downloads: true
+github:
+  msi_url: https://github.com/ila-embsys/justrunmydebugger/releases/download/v0.1.0/justrunmydebugger_0.1.0_x64.msi
+  deb_url: https://github.com/ila-embsys/justrunmydebugger/releases/download/v0.1.0/justrunmydebugger_0.1.0_amd64.deb
+  appimage_url: https://github.com/ila-embsys/justrunmydebugger/releases/download/v0.1.0/justrunmydebugger_0.1.0_amd64.AppImage
