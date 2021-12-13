@@ -49,11 +49,11 @@
         <p>This project is maintained by <a href="{{ site.github.owner_url }}">{{ site.github.owner_name }}</a></p>
         {% endif %}
         {% if site.authors %}
-        <p>Authors:</p>
+        <small>Authors:</small>
         <ul class="authors">
           {% for author in site.authors %}
             <li>
-              <p><small><a href="{{ author.url }}">{{ author.name }}</a></small></p>
+              <small><a href="{{ author.url }}">{{ author.name }}</a></small>
             </li>
           {% endfor %}
         </ul>
