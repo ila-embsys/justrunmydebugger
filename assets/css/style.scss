@@ -1,0 +1,14 @@
+---
+---
+
+@import "{{ site.theme }}";
+
+.authors li::marker {
+  display: list-item;
+  content: "@";
+  color: #c8c8c8;
+}
+
+ul.authors {
+  padding-inline-start: 15px;
+}
