@@ -16,10 +16,10 @@ module Hooks = {
   /// Convert `Any` index type from `MaterialUi` lib and return it as a number.
   ///
   let useMaterialUiTabIndex = () => {
-    let (tabIndex, setTabIndex) = React.useState(() => 0)
+    let (tabIndex, setTabIndex) = React.useReducer((_, v) => v, 0)
 
-    let tabChangeHandler = (_, newValue: MaterialUi_Types.any) => {
-      setTabIndex(newValue->MaterialUi_Types.anyUnpack)
+    let tabChangeHandler = (_, newValue: Mui.Any.t) => {
+      setTabIndex(newValue->Mui.Any.unsafeToInt)
     }
 
     (tabIndex, tabChangeHandler)

@@ -33,9 +33,9 @@ let make = (
 
   let color = {
     if isStarted {
-      #Secondary
+      #secondary
     } else {
-      #Primary
+      #primary
     }
   }
 
@@ -47,7 +47,7 @@ let make = (
     }
   }
 
-  <MaterialUi.Button color variant=#Contained onClick=on_click disabled>
-    {config_items[0]->buttonMsg}
-  </MaterialUi.Button>
+  <Mui.Button color variant=#contained onClick=on_click disabled>
+    {config_items[0]->buttonMsg->React.string}
+  </Mui.Button>
 }

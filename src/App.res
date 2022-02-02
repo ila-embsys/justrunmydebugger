@@ -13,7 +13,7 @@ let notificationAnchor = {
 /// multiline text filed with child string inside.
 ///
 module OpenocdOutput = {
-  open MaterialUi
+  open Mui
 
   let placeholder: string = "Openocd output..."
   let max_row_count = TextField.RowsMax.int(18)
@@ -23,8 +23,8 @@ module OpenocdOutput = {
     <TextField
       multiline=true
       rowsMax=max_row_count
-      size=#Medium
-      variant=#Outlined
+      size=#medium
+      variant=#outlined
       fullWidth=true
       placeholder
       disabled={children->Js.String2.length == 0}
@@ -37,7 +37,7 @@ module OpenocdOutput = {
 @react.component
 let make = () => {
   open Promise
-  open MaterialUi
+  open Mui
   open MaterialUiUtils
 
   let (dumpedState, setDumpedState) = useDumpedState()
@@ -127,8 +127,8 @@ let make = () => {
 
   // Tab with board selector
   let tab_board =
-    <Grid container=true spacing=#V3 alignItems=#Stretch>
-      <Grid item=true xs={Grid.Xs._12}>
+    <Grid container=true spacing=#3 alignItems=#stretch>
+      <Grid item=true xs={Grid.Xs.\"12"}>
         <BoardList
           selector_name="board"
           items=config_lists.boards
@@ -138,7 +138,7 @@ let make = () => {
           selected=dumpedState.board
         />
       </Grid>
-      <Grid item=true xs={Grid.Xs._12}>
+      <Grid item=true xs={Grid.Xs.\"12"}>
         <StartStopButton
           itemName="board"
           doStart={() => start(~with_interface=false)}
@@ -151,8 +151,8 @@ let make = () => {
 
   // Tab with target and interface selectors
   let tab_target =
-    <Grid container=true spacing=#V3 alignItems=#Stretch>
-      <Grid item=true xs={Grid.Xs._6}>
+    <Grid container=true spacing=#3 alignItems=#stretch>
+      <Grid item=true xs={Grid.Xs.\"6"}>
         <BoardList
           selector_name="interface"
           items=config_lists.interfaces
@@ -162,7 +162,7 @@ let make = () => {
           selected=dumpedState.interface
         />
       </Grid>
-      <Grid item=true xs={Grid.Xs._6}>
+      <Grid item=true xs={Grid.Xs.\"6"}>
         <BoardList
           selector_name="target"
           items=config_lists.targets
@@ -172,7 +172,7 @@ let make = () => {
           selected=dumpedState.target
         />
       </Grid>
-      <Grid item=true xs={Grid.Xs._12}>
+      <Grid item=true xs={Grid.Xs.\"12"}>
         <StartStopButton
           itemName="target with interface"
           doStart={() => start(~with_interface=true)}
@@ -188,26 +188,26 @@ let make = () => {
   /* Render: app interface */
   <>
     <Notistack.SnackbarProvider anchorOrigin=notificationAnchor autoHideDuration={2000}>
-      <Grid container=true spacing=#V1 alignItems=#Stretch>
-        <Grid item=true xs={Grid.Xs._3}>
-          <Paper variant=#Outlined>
-            <Tabs orientation=#Vertical onChange=tabChangeHandler value={tab_index->Any}>
+      <Grid container=true spacing=#1 alignItems=#stretch>
+        <Grid item=true xs={Grid.Xs.\"3"}>
+          <Paper variant=#outlined>
+            <Tabs orientation=#vertical onChange=tabChangeHandler value={tab_index->Any.fromInt}>
               <Tab label={"A predefined Board"->React.string} />
               <Tab label={"A Target with an Interface"->React.string} />
             </Tabs>
           </Paper>
         </Grid>
-        <Grid item=true xs={Grid.Xs._9}>
-          <Card elevation={MaterialUi_Types.Number.int(3)}>
+        <Grid item=true xs={Grid.Xs.\"9"}>
+          <Card elevation={Mui.Number.int(3)}>
             <CardContent>
               <TabContent currentIndex=tab_index tabIndex=0> {tab_board} </TabContent>
               <TabContent currentIndex=tab_index tabIndex=1> {tab_target} </TabContent>
             </CardContent>
           </Card>
         </Grid>
-        <Grid item=true xs={Grid.Xs._12} />
+        <Grid item=true xs={Grid.Xs.\"12"} />
       </Grid>
-      <Paper elevation={MaterialUi_Types.Number.int(0)}>
+      <Paper elevation={Mui.Number.int(0)}>
         <OpenocdOutput> openocd_output </OpenocdOutput>
       </Paper>
       <SnackbarOpenocdMessages />
