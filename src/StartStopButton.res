@@ -54,9 +54,9 @@ let make = (
 
   let color = {
     if isStarted {
-      #Secondary
+      #secondary
     } else {
-      #Primary
+      #primary
     }
   }
 
@@ -79,11 +79,11 @@ let make = (
 
   let make = {
     if is_loading {
-      <MaterialUi.CircularProgress size={MaterialUi.CircularProgress.Size.int(25)} />
+      <Mui.CircularProgress size={Mui.CircularProgress.Size.int(25)} />
     } else {
       buttonMsg()->React.string
     }
   }
 
-  <MaterialUi.Button color variant=#Contained onClick=on_click disabled> {make} </MaterialUi.Button>
+  <Mui.Button color variant=#contained onClick=on_click disabled> {make} </Mui.Button>
 }

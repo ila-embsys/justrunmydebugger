@@ -1,4 +1,4 @@
-open MaterialUi_Lab
+open MuiLab
 
 // Tricky convert `MaterialUi.Autocomplete.Value.t` to `Openocd.config_t`
 external asOcdConfig: Autocomplete.Value.t => Openocd.config_t = "%identity"
@@ -11,10 +11,10 @@ let make = (
   ~selected: option<Openocd.config_t>,
 ) => {
   open Belt
-  open MaterialUi
+  open Mui
 
   let optionRender = (b: Openocd.config_t, _) => {
-    <Typography> {b.name} </Typography>
+    <Typography> {b.name->React.string} </Typography>
   }
 
   let handleChangeItem = (_: ReactEvent.Form.t, value: Autocomplete.Value.t, _) => {
@@ -43,15 +43,15 @@ let make = (
       }
     }
 
-    <MaterialUi.TextField
+    <Mui.TextField
       error
       key=selector_name
       required={true}
       label={`Select any ${selector_name}`->React.string}
-      variant=#Outlined
+      variant=#outlined
       inputProps={params["inputProps"]}
-      _InputProps={params["InputProps"]}
-      _InputLabelProps={params["InputLabelProps"]}
+      \"InputProps"={params["InputProps"]}
+      \"InputLabelProps"={params["InputLabelProps"]}
       disabled={params["disabled"]}
       fullWidth={params["fullWidth"]}
       id={params["id"]}
@@ -61,8 +61,8 @@ let make = (
 
   let anchorOrigin = {
     Badge.AnchorOrigin.make(
-      ~horizontal={Badge.Horizontal.right},
-      ~vertical={Badge.Vertical.top},
+      ~horizontal={#right},
+      ~vertical={#top},
       (),
     )
   }
@@ -74,13 +74,13 @@ let make = (
     <Badge
       style={ReactDOM.Style.make(~display="block", ())}
       anchorOrigin
-      max={MaterialUi_Types.Number.int(999)}
+      max={Mui.Number.int(999)}
       badgeContent
-      color=#Primary>
+      color=#primary>
       <Autocomplete
-        value={Any(selected)}
+        value={selected->Mui.Any.make}
         key={`${selector_name}-${selected_name}`}
-        options={items->Array.map(v => v->MaterialUi.Any)}
+        options={items->Array.map(v => v->Mui.Any.make)}
         getOptionLabel={(item: Openocd.config_t) => item.name}
         renderInput
         onChange=handleChangeItem
