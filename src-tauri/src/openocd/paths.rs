@@ -56,26 +56,11 @@ impl OpenocdPaths {
 
     #[cfg(target_os = "windows")]
     fn root() -> Option<PathBuf> {
-        // Try to find openocd executable
         let binary = which::which("openocd");
         if let Ok(binary) = binary {
-            // Get root of openocd
-            let root = Self::from_bin_to_root(binary.as_path())?;
-
-            // If we got an unexpected root we should try harder (see else branch)
-            if Self::validate_root(root.as_path()) {
-                Some(root)
-            } else {
-                // Try to extract a real path to binary by hacking openocd (see `hack_binary_path`)
-                let true_binary = Self::hack_binary_path(binary.as_path())?;
-                let true_root = Self::from_bin_to_root(true_binary.as_path())?;
-                if Self::validate_root(true_root.as_path()) {
-                    Some(true_root)
-                } else {
-                    // Just give up...
-                    None
-                }
-            }
+            let true_binary = Self::hack_binary_path(binary.as_path())?;
+            let true_root = Self::from_bin_to_root(true_binary.as_path())?;
+            Some(true_root)
         } else {
             None
         }
@@ -96,26 +81,20 @@ impl OpenocdPaths {
     }
 
     fn scripts(openocd_path: &Path) -> Option<PathBuf> {
-        let mut root_iter =
-            WalkDir::new(openocd_path)
-                .into_iter()
-                .flatten()
-                .filter_map(|scripts| {
-                    let dir_name = scripts.path().file_name()?.to_string_lossy().to_string();
-
-                    if dir_name == "scripts" && Self::validate_scripts(scripts.path()) {
-                        Some(scripts)
-                    } else {
-                        None
-                    }
-                });
+        let mut root_iter = WalkDir::new(openocd_path)
+            .into_iter()
+            .flatten()
+            .filter(|entry| entry.path().is_dir())
+            .filter_map(|scripts| {
+                let dir_name = scripts.path().file_name()?.to_string_lossy().to_string();
+                if dir_name == "scripts" && Self::validate_scripts(scripts.path()) {
+                    Some(scripts)
+                } else {
+                    None
+                }
+            });
 
         Some(root_iter.next()?.into_path())
-    }
-
-    #[cfg_attr(unix, allow(dead_code))]
-    fn validate_root(root: &Path) -> bool {
-        Self::scripts(root).is_some()
     }
 
     #[cfg_attr(unix, allow(dead_code))]
@@ -131,6 +110,7 @@ impl OpenocdPaths {
             .max_depth(1)
             .into_iter()
             .flatten()
+            .filter(|entry| entry.path().is_dir())
             .filter_map(|dir: walkdir::DirEntry| {
                 let dir_name = dir.path().file_name()?.to_string_lossy().to_string();
 
