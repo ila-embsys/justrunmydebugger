@@ -38,12 +38,12 @@ module OpenocdOutput = {
 let make = () => {
   open Promise
   open Mui
-  open MaterialUiUtils
+  open MuiUtils
 
   let (dumpedState, setDumpedState) = useDumpedState()
-  let config_lists = useConfigLists()
+  let (is_configs_found, config_lists) = useConfigLists()
   let (openocd_output, set_openocd_output) = useOpenocdOutput()
-  let (tab_index, tabChangeHandler) = MaterialUiUtils.Hooks.useMaterialUiTabIndex()
+  let (tab_index, tabChangeHandler) = MuiUtils.Hooks.useMaterialUiTabIndex()
 
   let (is_started, set_is_started) = React.useState(() => false)
 
@@ -116,7 +116,8 @@ let make = () => {
 
   React.useEffect1(() => {
     switch notify {
-    | Some(val) => switch val.event {
+    | Some(val) =>
+      switch val.event {
       | Start => set_is_started(_ => true)
       | Stop => set_is_started(_ => false)
       }
@@ -187,31 +188,39 @@ let make = () => {
 
   /* Render: app interface */
   <>
-    <Notistack.SnackbarProvider anchorOrigin=notificationAnchor autoHideDuration={2000}>
-      <Grid container=true spacing=#1 alignItems=#stretch>
-        <Grid item=true xs={Grid.Xs.\"3"}>
-          <Paper variant=#outlined>
-            <Tabs orientation=#vertical onChange=tabChangeHandler value={tab_index->Any.fromInt}>
-              <Tab label={"A predefined Board"->React.string} />
-              <Tab label={"A Target with an Interface"->React.string} />
-            </Tabs>
+    <Loading display={!is_configs_found} />
+    <Grow \"in"=is_configs_found>
+      <div>
+        <Notistack.SnackbarProvider anchorOrigin=notificationAnchor autoHideDuration={2000}>
+          <Grid container=true spacing=#1 alignItems=#stretch>
+            <Grid item=true xs={Grid.Xs.\"3"}>
+              <Paper variant=#outlined>
+                <Tabs
+                  orientation=#vertical onChange=tabChangeHandler value={tab_index->Any.fromInt}>
+                  <Tab label={"A predefined Board"->React.string} />
+                  <Tab label={"A Target with an Interface"->React.string} />
+                </Tabs>
+              </Paper>
+            </Grid>
+            <Grid item=true xs={Grid.Xs.\"9"}>
+              <Card elevation={Mui.Number.int(3)}>
+                <CardContent>
+                  <TabContent currentIndex=tab_index tabIndex=0> {tab_board} </TabContent>
+                  <TabContent currentIndex=tab_index tabIndex=1> {tab_target} </TabContent>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item=true xs={Grid.Xs.\"12"} />
+          </Grid>
+          <Paper elevation={Mui.Number.int(0)}>
+            <OpenocdOutput> openocd_output </OpenocdOutput>
           </Paper>
-        </Grid>
-        <Grid item=true xs={Grid.Xs.\"9"}>
-          <Card elevation={Mui.Number.int(3)}>
-            <CardContent>
-              <TabContent currentIndex=tab_index tabIndex=0> {tab_board} </TabContent>
-              <TabContent currentIndex=tab_index tabIndex=1> {tab_target} </TabContent>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item=true xs={Grid.Xs.\"12"} />
-      </Grid>
-      <Paper elevation={Mui.Number.int(0)}>
-        <OpenocdOutput> openocd_output </OpenocdOutput>
-      </Paper>
-      <SnackbarOpenocdMessages />
-    </Notistack.SnackbarProvider>
-    <AppVersion />
+          <SnackbarOpenocdMessages />
+        </Notistack.SnackbarProvider>
+      </div>
+    </Grow>
+    <Fade \"in"=is_configs_found>
+      <div> <AppVersion /> </div>
+    </Fade>
   </>
 }

@@ -147,11 +147,14 @@ let useConfigLists = () => {
     targets: [],
   })
 
+  let (is_configs_found, setConfigsFound) = React.useState(() => false)
+
   /* Effect: receive config lists */
   React.useEffect1(() => {
     invoke_get_config_lists()
     ->then(lists => {
       setConfigLists(_ => lists)
+      setConfigsFound(_ => true)
       resolve()
     })
     ->catch(err => {
@@ -165,7 +168,7 @@ let useConfigLists = () => {
     None
   }, [])
 
-  config_lists
+  (is_configs_found, config_lists)
 }
 
 /// Subscribe to `notification` event and return Notification.t object on event receive
