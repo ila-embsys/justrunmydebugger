@@ -7,7 +7,6 @@ use std::{
 use tauri::Window;
 use threadpool::ThreadPool;
 
-use crate::api;
 use crate::{
     config::AppConfig,
     error::ErrorMsg,
@@ -31,7 +30,7 @@ impl App {
 
     /// Start openocd as process with provided configs as args
     ///
-    /// Started process emits event `openocd-output` on every received line of
+    /// Started process emits event `openocd.output` on every received line of
     /// openocd output to stderr. Return status as a string.
     ///
     /// List of configs can be retrieved with `get_config_list`.
@@ -141,8 +140,7 @@ impl App {
                     .lines()
                     .filter_map(|line| line.ok())
                     .for_each(|line| {
-                        api::send_raw(&window, "openocd-output", format!("{}\n", line).as_str());
-                        info!("-- {}", line);
+                        crate::openocd::output::send(&window, format!("{}\n", line));
                     });
 
                 App::send_event(&window, openocd_event::Kind::Stop, None)

@@ -59,7 +59,7 @@ module Notification = {
   )
 }
 
-/// Describe content of message of "openocd-event" tauri event
+/// Describe content of message of "openocd.event" tauri event
 module OpenocdEvent = {
   module Kind = {
     @deriving(jsConverter)
@@ -77,11 +77,24 @@ module OpenocdEvent = {
   )
 }
 
+/// Describe content of message of "openocd.output" tauri event
+module OpenocdOutput = {
+  type t = {line: string}
+
+  let codec = Jzon.object1(
+    ({line}) => line,
+    line => {line: line}->Ok,
+    Jzon.field("line", Jzon.string),
+  )
+}
+
 module ReactHooks = {
   open Promise
   open Belt_Option
 
   /// Subscribe to event and call user callback if event is received
+  ///
+  /// Use `useTypedListen` to parse payload to rescript types
   let useListen = (event: string, ~callback: Tauri.event => unit) => {
     let (unlisten: option<unit => unit>, setUnlisten) = React.useState(() => None)
 
@@ -102,7 +115,7 @@ module ReactHooks = {
     }, (unlisten, event, cb))
   }
 
-  /// Generic hook to recevice "typed" events
+  /// Generic hook to receive "typed" events
   ///
   /// Subscribe to event and try to convert event.payload.message to 'a on receive
   ///
@@ -115,27 +128,20 @@ module ReactHooks = {
   let useTypedListen = (event: string, codec: Jzon.codec<'a>): option<'a> => {
     let (payload: option<'a>, setPayload) = React.useState(() => None)
 
-    let makeTyped = (json_string: string): option<'a> => {
-      let json = Utils.Json.parse(json_string)
+    let makeTyped = (js_obj: Js.Json.t): option<'a> => {
+      let decode_result = js_obj->Jzon.decodeWith(codec)
 
-      switch json {
-      | Some(json) => {
-          let decode_result = json->Jzon.decodeWith(codec)
-
-          switch decode_result {
-          | Ok(result) => Some(result)
-          | Error(e) => {
-              %log.error(`Bad message payload: ${e->Jzon.DecodingError.toString}`)
-              None
-            }
-          }
+      switch decode_result {
+      | Ok(result) => Some(result)
+      | Error(e) => {
+          %log.error(`Bad message payload: ${e->Jzon.DecodingError.toString}`)
+          None
         }
-      | _ => None
       }
     }
 
     useListen(event, ~callback=e => {
-      setPayload(_ => makeTyped(e.payload.message))
+      setPayload(_ => makeTyped(e.payload))
     })
 
     payload

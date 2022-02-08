@@ -1,6 +1,6 @@
 open AppTypes
 
-/// Subscribe to `openocd-output` and return OpenOCD output as string
+/// Subscribe to `openocd.output` and return OpenOCD output as string
 ///
 /// Returns:
 ///   output: output of OpenOCD
@@ -8,11 +8,10 @@ open AppTypes
 ///
 let useOpenocdOutput = (): (string, string => unit) => {
   let (output: string, setOutput) = React.useState(() => "")
+  let output_event = Api.ReactHooks.useTypedListen("openocd.output", Api.OpenocdOutput.codec)
 
-  /* Cut and append OpenOCD output to state by `openocd-output` event */
-  let openocd_output_cb = (e: Tauri.event) => {
-    let message = e.payload.message
-
+  /* Cut and append OpenOCD output to state by `openocd.output` event */
+  React.useEffect1(() => {
     let rec text_cuter = (text: string, length: int) => {
       if text->Js.String2.length > length {
         let second_line_position = text->Js.String2.indexOf("\n") + 1
@@ -28,12 +27,17 @@ let useOpenocdOutput = (): (string, string => unit) => {
       }
     }
 
-    setOutput(output => {
-      (output ++ message)->text_cuter(5000)
-    })
-  }
+    let line = switch output_event {
+    | Some(output_event) => output_event.line
+    | None => ""
+    }
 
-  Api.ReactHooks.useListen("openocd-output", ~callback=openocd_output_cb)
+    setOutput(output => {
+      (output ++ line)->text_cuter(5000)
+    })
+
+    None
+  }, [output_event])
 
   (output, string => {setOutput(_ => string)})
 }
@@ -176,7 +180,7 @@ let useOpenocdNotification = (): option<Api.Notification.t> => {
   Api.ReactHooks.useTypedListen("notification", Api.Notification.codec)
 }
 
-/// Subscribe to `openocd-event` event and return OpenocdEvent.t object on event receive
+/// Subscribe to `openocd.event` event and return OpenocdEvent.t object on event receive
 let useOpenocdEvent = (): option<Api.OpenocdEvent.t> => {
-  Api.ReactHooks.useTypedListen("openocd-event", Api.OpenocdEvent.codec)
+  Api.ReactHooks.useTypedListen("openocd.event", Api.OpenocdEvent.codec)
 }
