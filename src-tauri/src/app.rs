@@ -141,6 +141,7 @@ impl App {
                     .filter_map(|line| line.ok())
                     .for_each(|line| {
                         crate::openocd::output::send(&window, format!("{}\n", line));
+                        info!("-- {}", line);
                     });
 
                 App::send_event(&window, openocd_event::Kind::Stop, None)
