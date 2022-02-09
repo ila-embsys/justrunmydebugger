@@ -15,11 +15,5 @@ pub struct Event {
 }
 
 pub fn send(window: &Window, event: Kind) {
-    api::send_raw(
-        window,
-        "openocd-event",
-        serde_json::to_string(&Event { event })
-            .expect("Fail to serialize event!")
-            .as_str(),
-    );
+    api::send_raw(window, "openocd.event", Event { event });
 }

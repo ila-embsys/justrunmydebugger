@@ -10,7 +10,7 @@ external invoke2: (string, 'a, 'b) => Promise.t<'data> = "invoke"
 @module("@tauri-apps/api/tauri")
 external invoke3: (string, 'a, 'b, 'c) => Promise.t<'data> = "invoke"
 
-type payload = {message: string}
+type payload = Js.Json.t
 type event = {name: string, payload: payload}
 
 @module("@tauri-apps/api/event")

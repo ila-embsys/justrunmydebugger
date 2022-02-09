@@ -49,4 +49,26 @@ module Jzon = {
         | None => Error(#UnexpectedJsonType([], "string", json))
         },
     )
+
+  /// Return codec to encode/decode string enum
+  let string_enum = (enumToString: 'a => string, stringToEnum: string => option<'a>) =>
+    Jzon.custom(
+      x => Jzon.string->Jzon.encode(enumToString(x)),
+      json =>
+        switch json->Js.Json.decodeString {
+        | Some(x) =>
+          switch x->stringToEnum {
+          | Some(x) => Ok(x)
+          | None =>
+            Error(
+              #UnexpectedJsonType(
+                [],
+                `string_enum (unexpected underlying enum value: ${x})`,
+                json,
+              ),
+            )
+          }
+        | None => Error(#UnexpectedJsonType([], "string", json))
+        },
+    )
 }

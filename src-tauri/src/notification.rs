@@ -20,11 +20,9 @@ pub fn send(window: &Window, msg: &str, lvl: Level) {
     api::send_raw(
         window,
         "notification",
-        serde_json::to_string(&Notification {
+        Notification {
             level: lvl,
             message: msg.into(),
-        })
-        .expect("Fail to serialize event!")
-        .as_str(),
+        },
     );
 }
