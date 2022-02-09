@@ -68,24 +68,15 @@ module OpenocdEvent = {
       | @as(1) Stop
   }
 
-  type t = {event: Kind.t}
+  type t = Kind.t
 
-  let codec = Jzon.object1(
-    ({event}) => event,
-    event => {event: event}->Ok,
-    Jzon.field("event", Utils.Json.Jzon.int_enum(Kind.tToJs, Kind.tFromJs)),
-  )
+  let codec = Utils.Json.Jzon.int_enum(Kind.tToJs, Kind.tFromJs)
 }
 
 /// Describe content of message of "openocd.output" tauri event
 module OpenocdOutput = {
-  type t = {line: string}
-
-  let codec = Jzon.object1(
-    ({line}) => line,
-    line => {line: line}->Ok,
-    Jzon.field("line", Jzon.string),
-  )
+  type t = string
+  let codec = Jzon.string
 }
 
 module ReactHooks = {
@@ -95,7 +86,7 @@ module ReactHooks = {
   /// Subscribe to event and call user callback if event is received
   ///
   /// Use `useTypedListen` to parse payload to rescript types
-  let useListen = (event: string, ~callback: Tauri.event => unit) => {
+  let useListen = (event: string, ~callback: Tauri.event<'p> => unit) => {
     let (unlisten: option<unit => unit>, setUnlisten) = React.useState(() => None)
 
     let cb = React.useCallback1(callback, [])
@@ -117,7 +108,7 @@ module ReactHooks = {
 
   /// Generic hook to receive "typed" events
   ///
-  /// Subscribe to event and try to convert event.payload.message to 'a on receive
+  /// Subscribe to event and try to convert event.payload to 'a on receive
   ///
   /// Arguments:
   ///   event — event subscribe to
@@ -128,7 +119,7 @@ module ReactHooks = {
   let useTypedListen = (event: string, codec: Jzon.codec<'a>): option<'a> => {
     let (payload: option<'a>, setPayload) = React.useState(() => None)
 
-    let makeTyped = (js_obj: Js.Json.t): option<'a> => {
+    let makeTyped = (js_obj: 'p): option<'a> => {
       let decode_result = js_obj->Jzon.decodeWith(codec)
 
       switch decode_result {

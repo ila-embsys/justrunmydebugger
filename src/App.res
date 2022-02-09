@@ -117,7 +117,7 @@ let make = () => {
   React.useEffect1(() => {
     switch notify {
     | Some(val) =>
-      switch val.event {
+      switch val {
       | Start => set_is_started(_ => true)
       | Stop => set_is_started(_ => false)
       }
