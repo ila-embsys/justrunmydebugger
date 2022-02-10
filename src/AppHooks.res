@@ -8,7 +8,7 @@ open AppTypes
 ///
 let useOpenocdOutput = (): (string, string => unit) => {
   let (output: string, setOutput) = React.useState(() => "")
-  let output_event = Api.ReactHooks.useTypedListen("openocd.output", Api.OpenocdOutput.codec)
+  let line = Api.ReactHooks.useTypedListen("openocd.output", Api.OpenocdOutput.codec)
 
   /* Cut and append OpenOCD output to state by `openocd.output` event */
   React.useEffect1(() => {
@@ -27,8 +27,8 @@ let useOpenocdOutput = (): (string, string => unit) => {
       }
     }
 
-    let line = switch output_event {
-    | Some(output_event) => output_event.line
+    let line = switch line {
+    | Some(line) => line
     | None => ""
     }
 
@@ -37,7 +37,7 @@ let useOpenocdOutput = (): (string, string => unit) => {
     })
 
     None
-  }, [output_event])
+  }, [line])
 
   (output, string => {setOutput(_ => string)})
 }

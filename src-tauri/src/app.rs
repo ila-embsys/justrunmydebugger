@@ -7,12 +7,12 @@ use std::{
 use tauri::Window;
 use threadpool::ThreadPool;
 
+use crate::api::TauriEvent;
 use crate::{
     config::AppConfig,
     error::ErrorMsg,
-    notification,
+    notification, openocd,
     openocd::config::{Config, ConfigsSet},
-    openocd::{event as openocd_event, proc as openocd},
 };
 
 pub struct App {
@@ -93,7 +93,7 @@ impl App {
     ///
     pub fn kill(&self, window: &Window) -> Result<String, ErrorMsg> {
         let res: Option<&str> = self.openocd_proc.lock().unwrap().as_mut().and_then(|proc| {
-            if !openocd::kill_proc(&mut proc.lock().unwrap()) {
+            if !openocd::proc::kill_proc(&mut proc.lock().unwrap()) {
                 error!("OpenOCD was not killed!");
                 Some("OpenOCD was not killed!")
             } else {
@@ -105,7 +105,7 @@ impl App {
         match res {
             Some(err) => Err(err.into()),
             None => {
-                openocd_event::send(window, openocd_event::Kind::Stop);
+                openocd::events::Event::Stop.send_to(window);
                 Ok("OpenOCD stopped".into())
             }
         }
@@ -125,7 +125,7 @@ impl App {
         let openocd_proc = self.openocd_proc.clone();
 
         self.openocd_workers.execute(move || {
-            let command = openocd::start(&configs);
+            let command = openocd::proc::start(&configs);
 
             if let Some(command) = command {
                 let cmd = Arc::new(Mutex::new(command));
@@ -134,43 +134,41 @@ impl App {
                 let stderr = cmd.lock().unwrap().stderr.take().unwrap();
                 let reader = BufReader::new(stderr);
 
-                App::send_event(&window, openocd_event::Kind::Start, None);
+                App::send_event(&window, openocd::events::Event::Start, None);
 
                 reader
                     .lines()
                     .filter_map(|line| line.ok())
                     .for_each(|line| {
-                        crate::openocd::output::send(&window, format!("{}\n", line));
+                        format!("{}\n", line).send_to(&window);
                         info!("-- {}", line);
                     });
 
-                App::send_event(&window, openocd_event::Kind::Stop, None)
+                App::send_event(&window, openocd::events::Event::Stop, None)
             } else {
                 App::send_event(
                     &window,
-                    openocd_event::Kind::Stop,
+                    openocd::events::Event::Stop,
                     Some("OpenOCD was not started!"),
                 )
             }
         });
     }
 
-    fn send_event(window: &Window, event: openocd_event::Kind, msg: Option<&str>) {
+    fn send_event(window: &Window, event: openocd::events::Event, msg: Option<&str>) {
+        type Event = openocd::events::Event;
         match event {
-            openocd_event::Kind::Start => {
+            Event::Start => {
                 let msg = msg.map_or("OpenOCD started!", |s| s);
-
                 info!("{}", msg);
-                notification::send(window, msg, notification::Level::Info);
-                openocd_event::send(window, openocd_event::Kind::Start);
+                notification::Notification::info(msg.into()).send_to(window);
             }
-            openocd_event::Kind::Stop => {
+            Event::Stop => {
                 let msg = msg.map_or("OpenOCD stopped!", |s| s);
-
                 warn!("{}", msg);
-                notification::send(window, msg, notification::Level::Warn);
-                openocd_event::send(window, openocd_event::Kind::Stop);
+                notification::Notification::warn(msg.into()).send_to(window);
             }
         }
+        event.send_to(window);
     }
 }

@@ -42,9 +42,9 @@ let make = () => {
 
   let (dumpedState, setDumpedState) = useDumpedState()
   let (is_configs_found, config_lists) = useConfigLists()
+  let openocd_event = AppHooks.useOpenocdEvent()
   let (openocd_output, set_openocd_output) = useOpenocdOutput()
   let (tab_index, tabChangeHandler) = MuiUtils.Hooks.useMaterialUiTabIndex()
-
   let (is_started, set_is_started) = React.useState(() => false)
 
   /* Start OpenOCD process on backend with selected configs */
@@ -112,19 +112,19 @@ let make = () => {
     ->ignore
   }
 
-  let notify = AppHooks.useOpenocdEvent()
-
+  // Handle OpenOCD start/stop events for StartStop button
   React.useEffect1(() => {
-    switch notify {
-    | Some(val) =>
-      switch val.event {
+    switch openocd_event {
+    | Some(openocd_event) =>
+      switch openocd_event {
       | Start => set_is_started(_ => true)
       | Stop => set_is_started(_ => false)
       }
     | None => ()
     }
+
     None
-  }, [notify])
+  }, [openocd_event])
 
   // Tab with board selector
   let tab_board =
