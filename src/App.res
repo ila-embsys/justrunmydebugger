@@ -219,8 +219,6 @@ let make = () => {
         </Notistack.SnackbarProvider>
       </div>
     </Grow>
-    <Fade \"in"=is_configs_found>
-      <div> <AppVersion /> </div>
-    </Fade>
+    <Fade \"in"=is_configs_found> <div> <AppVersion /> <GitpodButton /> </div> </Fade>
   </>
 }
