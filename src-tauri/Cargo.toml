@@ -27,9 +27,11 @@ walkdir = "^2.3.2"
 confy = "^0.4.0"
 regex = "^1.5.4"
 lazy_static = "^1.4.0"
-winapi = {version = "0.3.6" }
+winapi = { version = "0.3.6" }
 sysinfo = "0.20.5"
+command-group ="1.0.8"
+gitpod-ports-backwarder = { git = "https://github.com/ila-embsys/gitpod-ports-backwarder.git", tag = "v0.1.0" }
 
 [features]
-default = [ "custom-protocol" ]
-custom-protocol = [ "tauri/custom-protocol" ]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]

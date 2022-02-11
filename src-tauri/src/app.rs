@@ -1,4 +1,6 @@
+use command_group::AsyncGroupChild;
 use log::{error, info, warn};
+use std::cell::Cell;
 use std::io::{BufRead, BufReader};
 use std::{
     process::Child,
@@ -11,13 +13,14 @@ use crate::api::TauriEvent;
 use crate::{
     config::AppConfig,
     error::ErrorMsg,
-    notification, openocd,
+    gitpod, notification, openocd,
     openocd::config::{Config, ConfigsSet},
 };
 
 pub struct App {
     pub openocd_workers: ThreadPool,
     pub openocd_proc: Arc<Mutex<Option<Arc<Mutex<Child>>>>>,
+    pub gitpod_handlers: Cell<Option<AsyncGroupChild>>,
 }
 
 impl App {
@@ -25,6 +28,7 @@ impl App {
         Arc::new(Mutex::new(App {
             openocd_workers: ThreadPool::new(1),
             openocd_proc: Arc::new(Mutex::new(None)),
+            gitpod_handlers: Cell::new(None),
         }))
     }
 
@@ -59,6 +63,32 @@ impl App {
             self.start_openocd(configs, window);
             Ok("OpenOCD started!".into())
         }
+    }
+
+    pub fn start_gitpod(
+        &mut self,
+        instance_id: String,
+        host: Option<String>,
+        window: Window,
+    ) -> Result<String, ErrorMsg> {
+        match self.gitpod_handlers.get_mut() {
+            Some(_) => {
+                notification::Notification::info("Restart Gitpod companion...".into())
+                    .send_to(&window);
+                // kill
+                gitpod::events::Event::Stop.send_to(&window);
+                self.gitpod_handlers
+                    .replace(gitpod::proc::start(instance_id, host));
+            }
+            None => {
+                self.gitpod_handlers
+                    .replace(gitpod::proc::start(instance_id, host));
+            }
+        }
+
+        gitpod::events::Event::Start.send_to(&window);
+
+        Ok("Gitpod started!".into())
     }
 
     /// Dump selected fields with configs in GUI
