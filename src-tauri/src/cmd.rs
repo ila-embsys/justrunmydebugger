@@ -32,12 +32,12 @@ pub fn kill(state: tauri::State<State>, window: Window) -> Result<String, ErrorM
 ///
 #[tauri::command]
 pub fn start_gitpod(
-    instance_id: String,
+    id: String,
     host: Option<String>,
     state: tauri::State<State>,
     window: Window,
 ) -> Result<String, ErrorMsg> {
-    state.app.lock().unwrap().start_gitpod(instance_id, host, window)
+    state.app.lock().unwrap().start_gitpod(id, host, window)
 }
 
 /// Start openocd as process with provided configs as args

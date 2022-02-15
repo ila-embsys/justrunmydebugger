@@ -97,36 +97,46 @@ let reducer = (state: state_t, action: action_t) => {
 @react.component
 let make = () => {
   open Mui
+  open Promise
 
   let (state, dispatch) = React.useReducer(reducer, default_state)
 
-  // TODO: Make it useful
+  /* Invoke Gitpod connection process */
   React.useEffect1(() => {
     if state.current_state == Connecting {
-      Js.Console.info2("Connecting... with key", state.id)
-      let id = Js.Global.setTimeout(() => {
-        if state.id == "123" {
-          dispatch(Fail("Uups "->Js.String2.concat(state.id)))
-        } else {
-          dispatch(Success)
-        }
-      }, 2000)
+      Js.Console.info2("Connecting... with id", state.id)
 
-      Some(() => {Js.Global.clearTimeout(id)})
+      let hostname = if state.hostname->Js.String2.length > 0 {
+        Some(state.hostname)
+      } else {
+        None
+      }
+
+      Api.invoke_start_gitpod(~config={id: state.id, host: hostname})
+      ->then(s => {
+        %log.info(
+          "Connection result:"
+          ("=>", s)
+        )
+
+        dispatch(Success)
+        resolve()
+      })
+      ->catch(err => {
+        %log.error(
+          "Starting Gitpod companion error:"
+          ("Api.promise_error_msg(err)", Api.promise_error_msg(err))
+        )
+
+        dispatch(Fail(Api.promise_error_msg(err)))
+        resolve()
+      })
+      ->ignore
+
+      None
     } else {
       None
     }
-  }, [state.current_state])
-
-  // TODO: Make it useful
-  React.useEffect1(() => {
-    switch state.current_state {
-    | Fail => Js.Console.info2("Error!", state.error_msg)
-    | Done => Js.Console.info("Connected!")
-    | _ => ()
-    }
-
-    None
   }, [state.current_state])
 
   /* Render */

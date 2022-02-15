@@ -16,6 +16,15 @@ let invoke_kill = (): Promise.t<string> => Tauri.invoke("kill")
 
 let invoke_load_state = (): Promise.t<Openocd.app_config_t> => Tauri.invoke("load_state")
 
+type gitpod_hostname_t = option<string>
+type gitpod_config_t = {
+  id: string,
+  host: gitpod_hostname_t,
+}
+
+let invoke_start_gitpod = (~config: gitpod_config_t): Promise.t<string> =>
+  Tauri.invoke1("start_gitpod", config)
+
 let invoke_dump_state = (state: dump_state_t): Promise.t<string> =>
   Tauri.invoke1("dump_state", state)
 
