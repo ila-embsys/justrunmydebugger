@@ -34,7 +34,7 @@ impl App {
 
     /// Start openocd as process with provided configs as args
     ///
-    /// Started process emits event `openocd.output` on every received line of
+    /// Started process emits event `app://openocd/output` on every received line of
     /// openocd output to stderr. Return status as a string.
     ///
     /// List of configs can be retrieved with `get_config_list`.

@@ -9,12 +9,12 @@ pub enum Event {
 
 impl TauriEvent for String {
     fn topic(&self) -> &'static str {
-        "openocd.output"
+        "app://openocd/output"
     }
 }
 
 impl TauriEvent for Event {
     fn topic(&self) -> &'static str {
-        "openocd.event"
+        "app://openocd/event"
     }
 }

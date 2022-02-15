@@ -45,7 +45,7 @@ let promise_error_msg = (error: 'a): string => {
   }
 }
 
-/// Describe content of message of "notification" tauri event
+/// Describe content of message of "app://notification" tauri event
 module Notification = {
   module Level = {
     @deriving(jsConverter)
@@ -68,7 +68,7 @@ module Notification = {
   )
 }
 
-/// Describe content of message of "openocd.event" tauri event
+/// Describe content of message of "app://openocd/event" tauri event
 module OpenocdEvent = {
   module Kind = {
     @deriving(jsConverter)
@@ -82,7 +82,7 @@ module OpenocdEvent = {
   let codec = Utils.Json.Jzon.int_enum(Kind.tToJs, Kind.tFromJs)
 }
 
-/// Describe content of message of "openocd.output" tauri event
+/// Describe content of message of "app://openocd/output" tauri event
 module OpenocdOutput = {
   type t = string
   let codec = Jzon.string

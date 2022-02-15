@@ -42,6 +42,6 @@ impl Notification {
 
 impl TauriEvent for Notification {
     fn topic(&self) -> &'static str {
-        "notification"
+        "app://notification"
     }
 }
