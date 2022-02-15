@@ -175,12 +175,13 @@ let make = () => {
         </FormHelperText>
       </DialogContent>
       <DialogActions>
-        <Button
-          onClick={_ => dispatch(Connect)}
-          disabled={state.id->Utils.String.empty || state.current_state == Connecting}>
-          {"Connect"->React.string}
-        </Button>
         <Button onClick={_ => dispatch(Cancel)}> {"Close"->React.string} </Button>
+        <MuiExt.LoadingButton
+          text="Connect"
+          onClick={() => dispatch(Connect)}
+          disabled={state.id->Utils.String.empty || state.current_state == Connecting}
+          loading={state.current_state == Connecting}
+        />
       </DialogActions>
     </Dialog>
   </>
