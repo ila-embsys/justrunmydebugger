@@ -188,7 +188,7 @@ let make = () => {
 
   /* Render: app interface */
   <>
-    <Loading display={!is_configs_found} />
+    <MuiExt.Loading display={!is_configs_found} />
     <Grow \"in"=is_configs_found>
       <div>
         <Notistack.SnackbarProvider anchorOrigin=notificationAnchor autoHideDuration={2000}>
