@@ -1,5 +1,11 @@
 @react.component
-let make = (~id: string, ~label: string, ~onChange: string => unit, ~required: option<bool>=?) => {
+let make = (
+  ~id: string,
+  ~label: string,
+  ~value: string,
+  ~onChange: string => unit,
+  ~required: option<bool>=?,
+) => {
   open Mui
 
   let callback = (event: ReactEvent.Form.t) => {
@@ -10,8 +16,8 @@ let make = (~id: string, ~label: string, ~onChange: string => unit, ~required: o
   <TextField
     id
     label={label->React.string}
+    value={value->TextField.Value.string}
     required={required->Belt.Option.getWithDefault(false)}
-    value={""->TextField.Value.string}
     onChange={callback}
     fullWidth=true
     margin=#none

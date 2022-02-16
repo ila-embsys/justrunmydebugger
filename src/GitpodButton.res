@@ -53,10 +53,16 @@ let make = () => {
           {"Fill info below to connect to run Gitpod instance."->React.string}
         </DialogContentText>
         <Gitpod.TextField
-          id="id" label="Instance ID" required=true onChange={id => setInstanceId(_ => id)}
+          id="id"
+          label="Instance ID"
+          value=instance_id
+          required=true
+          onChange={id => setInstanceId(_ => id)}
         />
         <br />
-        <Gitpod.TextField id="hostname" label="Hostname" onChange={h => setHostname(_ => h)} />
+        <Gitpod.TextField
+          id="hostname" label="Hostname" value=hostname onChange={h => setHostname(_ => h)}
+        />
         <FormHelperText error={state.current_state == Fail} margin=#dense>
           {state.error_msg->React.string}
         </FormHelperText>
