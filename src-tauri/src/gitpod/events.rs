@@ -9,6 +9,6 @@ pub enum Event {
 
 impl TauriEvent for Event {
     fn topic(&self) -> &'static str {
-        "gitpod.event"
+        "app://gitpod/event"
     }
 }
