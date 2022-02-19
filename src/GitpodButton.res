@@ -1,3 +1,12 @@
+let useNotification = (enqueueSnackbar) => {
+  (~msg: string, ~level: Notistack.VariantType.t) => {
+    let _ = enqueueSnackbar(
+      ~message=msg->React.string,
+      ~options=Some({...Notistack.OptionsObject.default, variant: Some(level)}),
+    )
+  }
+}
+
 /// GitpodButton component
 @react.component
 let make = () => {
@@ -8,6 +17,8 @@ let make = () => {
   let (state, dispatch) = React.useReducer(Gitpod.State.reducer, Gitpod.State.initial_state)
   let (instance_id, setInstanceId) = React.useState(() => "")
   let (hostname, setHostname) = React.useState(() => "")
+  let {enqueueSnackbar, _} = Notistack.useSnackbar()
+  let sendNotification = useNotification(enqueueSnackbar)
 
   /* Invoke Gitpod connection process */
   React.useEffect1(() => {
@@ -17,17 +28,18 @@ let make = () => {
       Api.invoke_start_gitpod(~config={id: instance_id, host: hostname->Utils.String.to_option})
       ->then(s => {
         %log.info(
-          "Connection result:"
-          ("=>", s)
+          "Connected successfully!"
+          ("Result", s)
         )
 
         dispatch(Success)
+        sendNotification(~msg=s, ~level=#success)
         resolve()
       })
       ->catch(err => {
         %log.error(
           "Starting Gitpod companion error:"
-          ("Api.promise_error_msg(err)", Api.promise_error_msg(err))
+          ("Error", Api.promise_error_msg(err))
         )
 
         dispatch(Fail(Api.promise_error_msg(err)))

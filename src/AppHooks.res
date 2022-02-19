@@ -176,7 +176,7 @@ let useConfigLists = () => {
 }
 
 /// Subscribe to `app://notification` event and return Notification.t object on event receive
-let useOpenocdNotification = (): option<Api.Notification.t> => {
+let useNotification = (): option<Api.Notification.t> => {
   Api.ReactHooks.useTypedListen("app://notification", Api.Notification.codec)
 }
 
