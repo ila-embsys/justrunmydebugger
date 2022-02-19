@@ -4,12 +4,6 @@ external invoke: string => Promise.t<'data> = "invoke"
 @module("@tauri-apps/api/tauri")
 external invoke1: (string, 'a) => Promise.t<'data> = "invoke"
 
-@module("@tauri-apps/api/tauri")
-external invoke2: (string, 'a, 'b) => Promise.t<'data> = "invoke"
-
-@module("@tauri-apps/api/tauri")
-external invoke3: (string, 'a, 'b, 'c) => Promise.t<'data> = "invoke"
-
 type event<'p> = {name: string, payload: 'p}
 
 @module("@tauri-apps/api/event")
