@@ -1,6 +1,6 @@
 @react.component
 let make = () => {
-  let openocdNotification = AppHooks.useOpenocdNotification()
+  let openocdNotification = AppHooks.useNotification()
   let {enqueueSnackbar, _} = Notistack.useSnackbar()
 
   React.useEffect1(() => {

@@ -11,13 +11,16 @@ use crate::api::TauriEvent;
 use crate::{
     config::AppConfig,
     error::ErrorMsg,
-    notification, openocd,
+    gitpod,
+    notification::Notification,
+    openocd,
     openocd::config::{Config, ConfigsSet},
 };
 
 pub struct App {
     pub openocd_workers: ThreadPool,
     pub openocd_proc: Arc<Mutex<Option<Arc<Mutex<Child>>>>>,
+    pub gitpod_handlers: Option<gitpod::proc::Handlers>,
 }
 
 impl App {
@@ -25,12 +28,13 @@ impl App {
         Arc::new(Mutex::new(App {
             openocd_workers: ThreadPool::new(1),
             openocd_proc: Arc::new(Mutex::new(None)),
+            gitpod_handlers: None,
         }))
     }
 
     /// Start openocd as process with provided configs as args
     ///
-    /// Started process emits event `openocd.output` on every received line of
+    /// Started process emits event `app://openocd/output` on every received line of
     /// openocd output to stderr. Return status as a string.
     ///
     /// List of configs can be retrieved with `get_config_list`.
@@ -59,6 +63,36 @@ impl App {
             self.start_openocd(configs, window);
             Ok("OpenOCD started!".into())
         }
+    }
+
+    pub fn start_gitpod(
+        &mut self,
+        instance_id: String,
+        host: Option<String>,
+        window: Window,
+    ) -> Result<String, ErrorMsg> {
+        if let Some(handlers) = self.gitpod_handlers.as_mut() {
+            Notification::info("Restart Gitpod companion...".into()).send_to(&window);
+
+            handlers
+                .companion
+                .companion_process
+                .kill()
+                .expect("Can't kill ssh and gitpod companion!");
+
+            gitpod::events::Event::Stop.send_to(&window);
+        }
+
+        gitpod::proc::start(instance_id, host)
+            .map_err(|error| {
+                Notification::error(error.message.clone()).send_to(&window);
+                error
+            })
+            .map(|handlers| {
+                self.gitpod_handlers.replace(handlers);
+                gitpod::events::Event::Start.send_to(&window);
+                "Gitpod was started!".into()
+            })
     }
 
     /// Dump selected fields with configs in GUI
@@ -161,12 +195,12 @@ impl App {
             Event::Start => {
                 let msg = msg.map_or("OpenOCD started!", |s| s);
                 info!("{}", msg);
-                notification::Notification::info(msg.into()).send_to(window);
+                Notification::info(msg.into()).send_to(window);
             }
             Event::Stop => {
                 let msg = msg.map_or("OpenOCD stopped!", |s| s);
                 warn!("{}", msg);
-                notification::Notification::warn(msg.into()).send_to(window);
+                Notification::warn(msg.into()).send_to(window);
             }
         }
         event.send_to(window);

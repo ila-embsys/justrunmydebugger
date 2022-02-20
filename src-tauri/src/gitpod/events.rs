@@ -7,14 +7,8 @@ pub enum Event {
     Stop = 1,
 }
 
-impl TauriEvent for String {
-    fn topic(&self) -> &'static str {
-        "app://openocd/output"
-    }
-}
-
 impl TauriEvent for Event {
     fn topic(&self) -> &'static str {
-        "app://openocd/event"
+        "app://gitpod/event"
     }
 }

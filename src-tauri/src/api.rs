@@ -6,7 +6,7 @@ pub trait TauriEvent {
 
     fn send_to(self, window: &tauri::Window)
     where
-        Self: Sized + Serialize,
+        Self: Sized + Serialize + Clone,
     {
         window.emit(self.topic(), self).unwrap_or_else(|e| {
             error!("Error occurred while sending event: {}", e);

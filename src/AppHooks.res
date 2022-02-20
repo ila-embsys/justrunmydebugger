@@ -1,6 +1,6 @@
 open AppTypes
 
-/// Subscribe to `openocd.output` and return OpenOCD output as string
+/// Subscribe to `app://openocd/output` and return OpenOCD output as string
 ///
 /// Returns:
 ///   output: output of OpenOCD
@@ -8,9 +8,9 @@ open AppTypes
 ///
 let useOpenocdOutput = (): (string, string => unit) => {
   let (output: string, setOutput) = React.useState(() => "")
-  let line = Api.ReactHooks.useTypedListen("openocd.output", Api.OpenocdOutput.codec)
+  let line = Api.ReactHooks.useTypedListen("app://openocd/output", Api.OpenocdOutput.codec)
 
-  /* Cut and append OpenOCD output to state by `openocd.output` event */
+  /* Cut and append OpenOCD output to state by `app://openocd/output` event */
   React.useEffect1(() => {
     let rec text_cuter = (text: string, length: int) => {
       if text->Js.String2.length > length {
@@ -175,12 +175,12 @@ let useConfigLists = () => {
   (is_configs_found, config_lists)
 }
 
-/// Subscribe to `notification` event and return Notification.t object on event receive
-let useOpenocdNotification = (): option<Api.Notification.t> => {
-  Api.ReactHooks.useTypedListen("notification", Api.Notification.codec)
+/// Subscribe to `app://notification` event and return Notification.t object on event receive
+let useNotification = (): option<Api.Notification.t> => {
+  Api.ReactHooks.useTypedListen("app://notification", Api.Notification.codec)
 }
 
 /// Subscribe to `openocd.event` event and return OpenocdEvent.t object on event receive
 let useOpenocdEvent = (): option<Api.OpenocdEvent.t> => {
-  Api.ReactHooks.useTypedListen("openocd.event", Api.OpenocdEvent.codec)
+  Api.ReactHooks.useTypedListen("app://openocd/event", Api.OpenocdEvent.codec)
 }

@@ -11,6 +11,7 @@ mod error;
 mod notification;
 mod openocd;
 mod state;
+mod gitpod;
 
 use crate::app::App;
 
@@ -29,6 +30,7 @@ fn main() {
             cmd::load_state,
             cmd::dump_state,
             cmd::get_config_lists,
+            cmd::start_gitpod,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

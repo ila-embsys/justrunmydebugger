@@ -26,9 +26,23 @@ pub fn kill(state: tauri::State<State>, window: Window) -> Result<String, ErrorM
     state.app.lock().unwrap().kill(&window)
 }
 
+/// Start Gitpod companion
+///
+/// Return error string if something gone wrong.
+///
+#[tauri::command]
+pub fn start_gitpod(
+    id: String,
+    host: Option<String>,
+    state: tauri::State<State>,
+    window: Window,
+) -> Result<String, ErrorMsg> {
+    state.app.lock().unwrap().start_gitpod(id, host, window)
+}
+
 /// Start openocd as process with provided configs as args
 ///
-/// Started process emits event `openocd.output` on every received line of
+/// Started process emits event `app://openocd/output` on every received line of
 /// openocd output to stderr. Return status as a string.
 ///
 /// List of configs can be retrieved with `get_config_list`.
