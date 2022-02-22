@@ -1,6 +1,5 @@
 open Api
 open AppHooks
-open AppTypes
 
 let notificationAnchor = {
   open Notistack
@@ -33,19 +32,24 @@ module OpenocdOutput = {
   }
 }
 
-/// Main interface component
+/// App component
+///
+/// Arguments:
+/// - saveSettings (AppTypes.Settings.t => unit): function to dump settings, see `useSettings` hook
+///
 @react.component
-let make = () => {
+let make = (~saveSettings) => {
   open Promise
   open Mui
   open MuiUtils
+  open SettingsContext
 
-  let (dumpedState, setDumpedState) = useDumpedState()
   let (is_configs_found, config_lists) = useConfigLists()
   let openocd_event = AppHooks.useOpenocdEvent()
   let (openocd_output, set_openocd_output) = useOpenocdOutput()
   let (tab_index, tabChangeHandler) = MuiUtils.Hooks.useMaterialUiTabIndex()
   let (is_started, set_is_started) = React.useState(() => false)
+  let (settings, updateSettings) = SettingsContext.Context.use()
 
   /* Start OpenOCD process on backend with selected configs */
   let start = (~with_interface: bool) => {
@@ -63,9 +67,9 @@ let make = () => {
     }
 
     let configs = if with_interface {
-      [dumpedState.interface, dumpedState.target]
+      [settings.openocd.interface, settings.openocd.target]
     } else {
-      [dumpedState.board]
+      [settings.openocd.board]
     }
 
     if configs->every(c => c->isSome) {
@@ -112,6 +116,12 @@ let make = () => {
     ->ignore
   }
 
+  // Save settings every time it's updated
+  React.useEffect1(() => {
+    saveSettings(settings)
+    None
+  }, [settings])
+
   // Handle OpenOCD start/stop events for StartStop button
   React.useEffect1(() => {
     switch openocd_event {
@@ -133,10 +143,8 @@ let make = () => {
         <BoardList
           selector_name="board"
           items=config_lists.boards
-          onChange={board => {
-            setDumpedState({...dumpedState, board: board})
-          }}
-          selected=dumpedState.board
+          onChange={board => updateSettings(Update.Board(board))}
+          selected=settings.openocd.board
         />
       </Grid>
       <Grid item=true xs={Grid.Xs.\"12"}>
@@ -145,7 +153,7 @@ let make = () => {
           doStart={() => start(~with_interface=false)}
           doStop=kill
           isStarted=is_started
-          isReady={() => dumpedState.board->Belt.Option.isSome}
+          isReady={() => settings.openocd.board->Belt.Option.isSome}
         />
       </Grid>
     </Grid>
@@ -157,20 +165,16 @@ let make = () => {
         <BoardList
           selector_name="interface"
           items=config_lists.interfaces
-          onChange={interface => {
-            setDumpedState({...dumpedState, interface: interface})
-          }}
-          selected=dumpedState.interface
+          onChange={interface => updateSettings(Update.Interface(interface))}
+          selected=settings.openocd.interface
         />
       </Grid>
       <Grid item=true xs={Grid.Xs.\"6"}>
         <BoardList
           selector_name="target"
           items=config_lists.targets
-          onChange={target => {
-            setDumpedState({...dumpedState, target: target})
-          }}
-          selected=dumpedState.target
+          onChange={target => updateSettings(Update.Target(target))}
+          selected=settings.openocd.target
         />
       </Grid>
       <Grid item=true xs={Grid.Xs.\"12"}>
@@ -180,7 +184,8 @@ let make = () => {
           doStop=kill
           isStarted=is_started
           isReady={_ => {
-            dumpedState.target->Belt.Option.isSome && dumpedState.interface->Belt.Option.isSome
+            settings.openocd.target->Belt.Option.isSome &&
+              settings.openocd.interface->Belt.Option.isSome
           }}
         />
       </Grid>

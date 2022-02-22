@@ -1,19 +1,19 @@
 open MuiLab
 
-// Tricky convert `MaterialUi.Autocomplete.Value.t` to `Openocd.config_t`
-external asOcdConfig: Autocomplete.Value.t => Openocd.config_t = "%identity"
+// Tricky convert `MaterialUi.Autocomplete.Value.t` to `AppTypes.openocd_config_file_t`
+external asOcdConfig: Autocomplete.Value.t => Openocd.config_file_t = "%identity"
 
 @react.component
 let make = (
   ~selector_name: string,
-  ~items: array<Openocd.config_t>,
-  ~onChange: option<Openocd.config_t> => unit,
-  ~selected: option<Openocd.config_t>,
+  ~items: array<Openocd.config_file_t>,
+  ~onChange: option<Openocd.config_file_t> => unit,
+  ~selected: option<Openocd.config_file_t>,
 ) => {
   open Belt
   open Mui
 
-  let optionRender = (b: Openocd.config_t, _) => {
+  let optionRender = (b: Openocd.config_file_t, _) => {
     <Typography> {b.name->React.string} </Typography>
   }
 
@@ -81,7 +81,7 @@ let make = (
         value={selected->Mui.Any.make}
         key={`${selector_name}-${selected_name}`}
         options={items->Array.map(v => v->Mui.Any.make)}
-        getOptionLabel={(item: Openocd.config_t) => item.name}
+        getOptionLabel={(item: Openocd.config_file_t) => item.name}
         renderInput
         onChange=handleChangeItem
         renderOption=optionRender

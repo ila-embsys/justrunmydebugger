@@ -1,20 +1,20 @@
-type configs = {configs: array<Openocd.config_t>}
-type config_type = {configType: string}
-type dump_state_t = {dumped: Openocd.app_config_t}
+type configs_t = {configs: array<Openocd.config_file_t>}
+type settings_t = {gitpod: AppTypes.gitpod_settings_t, openocd: Openocd.openocd_config_t}
+type dump_state_t = {dumped: settings_t}
 
 type config_lists_t = {
-  boards: array<Openocd.config_t>,
-  interfaces: array<Openocd.config_t>,
-  targets: array<Openocd.config_t>,
+  boards: array<Openocd.config_file_t>,
+  interfaces: array<Openocd.config_file_t>,
+  targets: array<Openocd.config_file_t>,
 }
 
 let invoke_get_config_lists = (): Promise.t<config_lists_t> => Tauri.invoke("get_config_lists")
 
-let invoke_start = (cfgs: configs): Promise.t<string> => Tauri.invoke1("start", cfgs)
+let invoke_start = (cfgs: configs_t): Promise.t<string> => Tauri.invoke1("start", cfgs)
 
 let invoke_kill = (): Promise.t<string> => Tauri.invoke("kill")
 
-let invoke_load_state = (): Promise.t<Openocd.app_config_t> => Tauri.invoke("load_state")
+let invoke_load_state = (): Promise.t<settings_t> => Tauri.invoke("load_state")
 
 type gitpod_hostname_t = option<string>
 type gitpod_config_t = {

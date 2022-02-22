@@ -1,5 +1,19 @@
-type config_set_t = {
-  board: option<Openocd.config_t>,
-  interface: option<Openocd.config_t>,
-  target: option<Openocd.config_t>,
+type gitpod_settings_t = {
+  instance_id: string,
+  hostname: string,
+}
+
+module Settings = {
+  type t = {openocd: Openocd.openocd_config_set_t, gitpod: gitpod_settings_t}
+
+  let default = (): t => {
+    {
+      openocd: {
+        board: None,
+        interface: None,
+        target: None,
+      },
+      gitpod: {instance_id: "", hostname: ""},
+    }
+  }
 }
