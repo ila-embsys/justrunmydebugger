@@ -4,7 +4,7 @@ type gitpod_settings_t = {
 }
 
 module Settings = {
-  type t = {openocd: Openocd.openocd_config_set_t, gitpod: gitpod_settings_t}
+  type t = {openocd: Openocd.config_set_t, gitpod: gitpod_settings_t}
 
   let default = (): t => {
     {

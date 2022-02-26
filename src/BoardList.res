@@ -1,6 +1,6 @@
 open MuiLab
 
-// Tricky convert `MaterialUi.Autocomplete.Value.t` to `AppTypes.openocd_config_file_t`
+// Tricky convert `MaterialUi.Autocomplete.Value.t` to `Openocd.config_file_t`
 external asOcdConfig: Autocomplete.Value.t => Openocd.config_file_t = "%identity"
 
 @react.component

@@ -3,13 +3,13 @@ type config_file_t = {
   path: string,
 }
 
-type openocd_config_set_t = {
+type config_set_t = {
   board: option<config_file_t>,
   interface: option<config_file_t>,
   target: option<config_file_t>,
 }
 
-type openocd_config_t = {
+type config_t = {
   board: config_file_t,
   interface: config_file_t,
   target: config_file_t,

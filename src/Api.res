@@ -1,5 +1,5 @@
 type configs_t = {configs: array<Openocd.config_file_t>}
-type settings_t = {gitpod: AppTypes.gitpod_settings_t, openocd: Openocd.openocd_config_t}
+type settings_t = {gitpod: AppTypes.gitpod_settings_t, openocd: Openocd.config_t}
 type dump_state_t = {dumped: settings_t}
 
 type config_lists_t = {

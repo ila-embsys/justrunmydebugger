@@ -109,7 +109,7 @@ let useSettings = (): (option<Settings.t>, Settings.t => unit) => {
       }
     }
 
-    let openocd_config: Openocd.openocd_config_t = {
+    let openocd_config: Openocd.config_t = {
       board: settings.openocd.board->option_to_empty_cfg,
       interface: settings.openocd.interface->option_to_empty_cfg,
       target: settings.openocd.target->option_to_empty_cfg,
