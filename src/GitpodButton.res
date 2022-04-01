@@ -1,4 +1,6 @@
-let useNotification = (enqueueSnackbar) => {
+let useNotification = (useSnackbar: unit => Notistack.ProviderContext.t) => {
+  let {enqueueSnackbar, _} = useSnackbar()
+
   (~msg: string, ~level: Notistack.VariantType.t) => {
     let _ = enqueueSnackbar(
       ~message=msg->React.string,
@@ -17,8 +19,7 @@ let make = () => {
   let (state, dispatch) = React.useReducer(Gitpod.State.reducer, Gitpod.State.initial_state)
   let (instance_id, setInstanceId) = React.useState(() => "")
   let (hostname, setHostname) = React.useState(() => "")
-  let {enqueueSnackbar, _} = Notistack.useSnackbar()
-  let sendNotification = useNotification(enqueueSnackbar)
+  let sendNotification = useNotification(Notistack.useSnackbar)
 
   /* Invoke Gitpod connection process */
   React.useEffect1(() => {

@@ -42,100 +42,6 @@ let useOpenocdOutput = (): (string, string => unit) => {
   (output, string => {setOutput(_ => string)})
 }
 
-/// Load state the last saved app state, dump state, update state
-///
-/// Store and provide access to config_set (set of current selected configs).
-///
-/// Returns:
-///   config_set_t: config set
-///   config_set_t => unit: setter for config set
-///
-let useDumpedState = (): (config_set_t, config_set_t => unit) => {
-  open Api
-  open Promise
-
-  /* App state (config set) */
-  let (config_set: config_set_t, setConfigSet) = React.useState(() => {
-    board: None,
-    interface: None,
-    target: None,
-  })
-
-  /* Dump an app state (config set) */
-  let dump_state = (config_set: config_set_t) => {
-    setConfigSet(_ => config_set)
-
-    let option_to_empty_cfg = (conf: option<Openocd.config_t>) => {
-      switch conf {
-      | Some(c) => c
-      | None => {name: "", path: ""}
-      }
-    }
-
-    let conf_to_save: Openocd.app_config_t = {
-      board: config_set.board->option_to_empty_cfg,
-      interface: config_set.interface->option_to_empty_cfg,
-      target: config_set.target->option_to_empty_cfg,
-    }
-
-    invoke_dump_state({dumped: conf_to_save})
-    ->then(_ => {
-      %log.info(
-        "Dump selectors state:"
-        ("conf_to_save", conf_to_save)
-      )
-      resolve()
-    })
-    ->catch(err => {
-      %log.error(
-        "Dump selectors state raise an exception"
-        ("Api.promise_error_msg(err)", Api.promise_error_msg(err))
-      )
-      resolve()
-    })
-    ->ignore
-  }
-
-  /* Effect: load the last saved configs once */
-  React.useEffect1(() => {
-    invoke_load_state()
-    ->then((conf: Openocd.app_config_t) => {
-      %log.info(
-        "Load selectors state:"
-        ("conf", conf)
-      )
-
-      /* Turn empty config to option */
-      let as_option = (conf: Openocd.config_t) => {
-        if conf.name != "" {
-          Some(conf)
-        } else {
-          None
-        }
-      }
-
-      setConfigSet(_ => {
-        board: conf.board->as_option,
-        interface: conf.interface->as_option,
-        target: conf.target->as_option,
-      })
-      resolve()
-    })
-    ->catch(err => {
-      %log.error(
-        "Load selectors state raise an exception"
-        ("Api.promise_error_msg(err)", Api.promise_error_msg(err))
-      )
-      resolve()
-    })
-    ->ignore
-
-    None
-  }, [])
-
-  (config_set, dump_state)
-}
-
 /// Receive config lists
 ///
 /// Returns:
@@ -173,6 +79,96 @@ let useConfigLists = () => {
   }, [])
 
   (is_configs_found, config_lists)
+}
+
+/// Load the last app settings, dump settings, update settings
+///
+/// Store and provide access to app settings.
+///
+/// Returns:
+///   Settings.t: the app settings
+///   Settings.t => unit: setter for the settings
+///
+let useSettings = (): (option<Settings.t>, Settings.t => unit) => {
+  open Api
+  open Promise
+
+  /* Setting state */
+  let (settings: option<Settings.t>, setSettings) = React.useState(() => {
+    None
+  })
+
+  /* Dump an app settings */
+  let dump_settings = (settings: Settings.t) => {
+    setSettings(_ => Some(settings))
+
+    let option_to_empty_cfg = (conf: option<Openocd.config_file_t>) => {
+      switch conf {
+      | Some(c) => c
+      | None => {name: "", path: ""}
+      }
+    }
+
+    let openocd_config: Openocd.config_t = {
+      board: settings.openocd.board->option_to_empty_cfg,
+      interface: settings.openocd.interface->option_to_empty_cfg,
+      target: settings.openocd.target->option_to_empty_cfg,
+    }
+
+    invoke_dump_state({dumped: {gitpod: settings.gitpod, openocd: openocd_config}})
+    ->then(_ => {
+      Js.Console.info2("Dump app settings:", settings)
+      resolve()
+    })
+    ->catch(err => {
+      %log.error(
+        "Dump selectors state raise an exception"
+        ("Api.promise_error_msg(err)", Api.promise_error_msg(err))
+      )
+      resolve()
+    })
+    ->ignore
+  }
+
+  /* Effect: load the last saved settings once */
+  React.useEffect1(() => {
+    invoke_load_state()
+    ->then((settings: settings_t) => {
+      Js.Console.info2("Load app settings:", settings)
+
+      /* Turn empty config to option */
+      let as_option = (conf: Openocd.config_file_t) => {
+        if conf.name != "" {
+          Some(conf)
+        } else {
+          None
+        }
+      }
+
+      setSettings(_ => Some({
+        openocd: {
+          board: settings.openocd.board->as_option,
+          interface: settings.openocd.interface->as_option,
+          target: settings.openocd.target->as_option,
+        },
+        gitpod: settings.gitpod,
+      }))
+
+      resolve()
+    })
+    ->catch(err => {
+      %log.error(
+        "Load selectors state raise an exception"
+        ("Api.promise_error_msg(err)", Api.promise_error_msg(err))
+      )
+      resolve()
+    })
+    ->ignore
+
+    None
+  }, [])
+
+  (settings, dump_settings)
 }
 
 /// Subscribe to `app://notification` event and return Notification.t object on event receive
