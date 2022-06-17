@@ -1,9 +1,9 @@
 /node_modules
 /dist
 /*.lock
+!yarn.lock
 /*.merlin
 /package-lock.json
 /src/**/*.js
 /yarn-error.log
 /lib/bs
-/src-tauri/Cargo.lock
