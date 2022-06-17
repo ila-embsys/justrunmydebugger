@@ -28,12 +28,10 @@
       "longDescription": "This tool is a GUI for easy start and use OpenOCD. Built with Rust and Rescript by very beginners of the both languages.",
       "deb": {
         "depends": [],
-        "useBootstrapper": false
       },
       "macOS": {
         "frameworks": [],
         "minimumSystemVersion": "",
-        "useBootstrapper": false,
         "exceptionDomain": "",
         "signingIdentity": null,
         "entitlements": null
