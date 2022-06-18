@@ -13,12 +13,14 @@
     "rollup:build": "rollup --config",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build -d",
-    "tauri:build:prod": "tauri build",
+    "tauri:build:prod": "tauri build -c '{\"tauri\":{\"bundle\":{\"active\":false}}}'",
+    "tauri:build:bundle": "tauri build -c '{\"tauri\":{\"bundle\":{\"active\":true}}}'",
     "genversion": "genversion --es6 src/version.js",
     "start": "run-p genversion re:start rollup:watch tauri:dev",
     "start:no-rewatch": "run-p genversion rollup:watch tauri:dev",
     "build": "run-s genversion re:build:debug rollup:build tauri:build",
-    "build:prod": "run-s genversion re:build:prod rollup:build tauri:build:prod"
+    "build:prod": "run-s genversion re:build:prod rollup:build tauri:build:prod",
+    "build:bundle": "run-s genversion re:build:prod rollup:build tauri:build:bundle"
   },
   "devDependencies": {
     "@material-ui/core": "^4.12.3",
