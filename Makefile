@@ -9,8 +9,8 @@ all: build
 
 .PHONY: build
 build:
-	yarn install
-	yarn build:prod
+	yarnpkg install
+	yarnpkg build:prod
 
 install:
 	cp $(BUILD_DIR)/release/justrunmydebugger $(BIN)
