@@ -20,8 +20,7 @@
     "start:no-rewatch": "run-p genversion rollup:watch tauri:dev",
     "build": "run-s genversion re:build:debug rollup:build tauri:build",
     "build:prod": "run-s genversion re:build:prod rollup:build tauri:build:prod",
-    "build:bundle": "run-s genversion re:build:prod rollup:build tauri:build:bundle",
-    "export:package-lock": "synp -f --source-file yarn.lock"
+    "build:bundle": "run-s genversion re:build:prod rollup:build tauri:build:bundle"
   },
   "devDependencies": {
     "@material-ui/core": "^4.12.3",
@@ -36,8 +35,7 @@
     "rollup": "^2.56.2",
     "rollup-plugin-livereload": "^2.0.5",
     "rollup-plugin-postcss": "^4.0.1",
-    "rollup-plugin-serve": "^1.1.0",
-    "synp": "^1.9.10"
+    "rollup-plugin-serve": "^1.1.0"
   },
   "dependencies": {
     "@fontsource/roboto": "^4.5.0",
@@ -50,8 +48,8 @@
     "cross-env": "^7.0.3",
     "genversion": "^3.0.1",
     "notistack": "^1.0.10",
-    "react": "^16.8.1",
-    "react-dom": "^16.8.1",
+    "react": "^17.0.0",
+    "react-dom": "^17.0.0",
     "rescript-jzon": "^1.3.0",
     "rescript-logger": "^2.0.0",
     "rescript-material-ui": "^3.0.0",

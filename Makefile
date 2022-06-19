@@ -1,4 +1,4 @@
-PREFIX ?= /usr/local
+PREFIX?=/usr/local
 DESTDIR=
 BIN=$(DESTDIR)$(PREFIX)/bin/
 
@@ -12,11 +12,17 @@ build:
 	yarnpkg install
 	yarnpkg build:prod
 
-.PHONY: install:
+.PHONY: install
 install:
 	cp $(BUILD_DIR)/release/justrunmydebugger $(BIN)
 
 .PHONY: clean
 clean:
 	rm -rf $(BUILD_DIR)/debug
-	rm -rf $(BUILD_DIR)/release
+	rm -rf $(BUILD_DIR)/
+	
+.PHONY: lockfiles
+lockfiles:
+	npm i --package-lock-only
+	npm install
+	yarnpkg import
