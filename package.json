@@ -14,13 +14,15 @@
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build -d",
     "tauri:build:prod": "tauri build",
-    "tauri:build:bundle": "tauri build -c src-tauri/tauri-bundle.overlay.conf.json",
+    "tauri:build:bundle": "tauri build -d -c src-tauri/tauri-bundle.overlay.conf.json",
+    "tauri:build:prod:bundle": "tauri build -c src-tauri/tauri-bundle.overlay.conf.json",
     "genversion": "genversion --es6 src/version.js",
     "start": "run-p genversion re:start rollup:watch tauri:dev",
     "start:no-rewatch": "run-p genversion rollup:watch tauri:dev",
     "build": "run-s genversion re:build:debug rollup:build tauri:build",
+    "build:bundle": "run-s genversion re:build:debug rollup:build tauri:build:bundle",
     "build:prod": "run-s genversion re:build:prod rollup:build tauri:build:prod",
-    "build:bundle": "run-s genversion re:build:prod rollup:build tauri:build:bundle"
+    "build:prod:bundle": "run-s genversion re:build:prod rollup:build tauri:build:prod:bundle"
   },
   "devDependencies": {
     "@material-ui/core": "^4.12.3",

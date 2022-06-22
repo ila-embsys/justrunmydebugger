@@ -82,15 +82,15 @@ jobs:
         run: yarn install # will run `yarn install` command
     
       - name: Build debug variant
-        run: yarn build
+        run: yarn build:bundle
         if: matrix.build == 'debug'
         
       - name: Build release variant
-        run: yarn build:prod
+        run: yarn build:prod:bundle
         if: matrix.build == 'release'
 
       - name: Archive ${{ matrix.build }} DEB artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: matrix.os == 'ubuntu-latest'
         with:
           name: ${{ env.bundle_app_name_prefix }}-bundle-${{ matrix.build }}-${{ matrix.os }}-deb
@@ -98,7 +98,7 @@ jobs:
             src-tauri/target/${{ matrix.build }}/bundle/deb/${{ env.bundle_app_name_prefix }}_*_*.*
             
       - name: Archive ${{ matrix.build }} AppImage artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: matrix.os == 'ubuntu-latest'
         with:
           name: ${{ env.bundle_app_name_prefix }}-bundle-${{ matrix.build }}-${{ matrix.os }}-appimage
@@ -106,7 +106,7 @@ jobs:
             src-tauri/target/${{ matrix.build }}/bundle/appimage/${{ env.bundle_app_name_prefix }}_*_*.*
             
       - name: Archive ${{ matrix.build }} MSI artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: matrix.os == 'windows-latest'
         with:
           name: ${{ env.bundle_app_name_prefix }}-bundle-${{ matrix.build }}-${{ matrix.os }}-msi

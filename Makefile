@@ -10,7 +10,7 @@ all: build
 .PHONY: build
 build:
 	yarnpkg install
-	yarnpkg build:prod
+	yarnpkg build:prod:bundle
 
 .PHONY: install
 install:
