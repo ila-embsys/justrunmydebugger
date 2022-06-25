@@ -61,7 +61,9 @@
       }
     ],
     "security": {
-      "csp": "default-src blob: data: filesystem: ws: wss: http: https: tauri: 'unsafe-eval' 'unsafe-inline' 'self' img-src: 'self'"
+      // FIXME: brake styles in release bundle
+      // "csp": "default-src blob: data: filesystem: ws: wss: http: https: tauri: 'unsafe-eval' 'unsafe-inline' 'self'; img-src: 'self'; style-src: 'unsafe-inline'"
+      "csp": null
     }
   }
 }
